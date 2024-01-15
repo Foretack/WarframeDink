@@ -11,6 +11,7 @@ const Game = @import("parsing/game.zig");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
+var machineUsername: ?[]const u8 = null;
 const startTime = std.time.timestamp() + 30;
 var user: []u8 = undefined;
 var loggedOut = false;
@@ -21,9 +22,9 @@ pub fn main() !void {
     while (true) {
         // 30s
         std.time.sleep(30_000_000_000);
-        const file = try fs.openFileAbsolute(
-            \\C:\Users\VOICE\AppData\Local\Warframe\EE.log
-        , .{});
+        const logFilePath = try getWarframeLogFile();
+        defer allocator.free(logFilePath);
+        const file = try fs.openFileAbsolute(logFilePath, .{});
 
         defer file.close();
         const stat = try file.stat();
@@ -49,6 +50,31 @@ pub fn main() !void {
             }
         }
     }
+}
+
+fn getWarframeLogFile() ![]const u8 {
+    if (builtin.os.tag == .windows) {
+        if (machineUsername == null) {
+            machineUsername = try std.process.getEnvVarOwned(allocator, "USERNAME");
+        }
+
+        return std.fmt.allocPrint(allocator,
+            \\C:\Users\{s}\AppData\Local\Warframe\EE.log
+        , .{machineUsername.?});
+    }
+
+    if (builtin.os.tag == .linux) {
+        if (machineUsername == null) {
+            machineUsername = try std.process.getEnvVarOwned(allocator, "USER");
+        }
+
+        // TODO
+        return std.fmt.allocPrint(allocator,
+            \\/home/{s}/.local/share/Steam/steamapps/compatdata/230410/pfx/drive_c/users/steamuser/Saved Games/
+        , .{machineUsername.?});
+    }
+
+    return anyerror.PlatformUnsupported;
 }
 
 fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
