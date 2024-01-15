@@ -1,0 +1,84 @@
+{
+    "profilePictureUrl": "https://content.invisioncic.com/Mwarframe/pages_media/1_LotusSymbol.png",
+    "warframeLogFile": "C:\\Users\\YOUR USERNAME\\AppData\\Local\\Warframe\\EE.log",
+    "webhookUrl": "https://discord.com/api/webhooks/XXXXX/XXXXX",
+    "notifications": {
+        "login": {
+            "enabled": false
+        },
+        "logout": {
+            "enabled": false
+        },
+        "masteryRankUp": {
+            "enabled": true
+        },
+        "nightwaveChallengeComplete": {
+            "enabled": true
+        },
+        "acolyteDefeat": {
+            "enabled": true
+        },
+        "stalkerDefeat": {
+            "enabled": true
+        },
+        "lichSpawn": {
+            "enabled": true
+        },
+        "lichDefeat": {
+            "enabled": true
+        },
+        "eidolonCaptured": {
+            "enabled": true
+        },
+        "dailySortie": {
+            "enabled": true
+        },
+        "rivenSliverPickup": {
+            "enabled": true
+        },
+        "missionFailed": {
+            "enabled": true
+        },
+        "death": {
+            "enabled": true
+        },
+        "normalMission": {
+            "enabled": true,
+            "minLevel": 100
+        },
+        "steelPathMission": {
+            "enabled": true
+        },
+        "nightmareMission": {
+            "enabled": true
+        },
+        "kuvaSiphon": {
+            "enabled": true
+        },
+        "kuvaFlood": {
+            "enabled": true
+        },
+        "weeklyAyatanMission": {
+            "enabled": true
+        },
+        "eidolonHunt": {
+            "enabled": true
+        },
+        "voidFissure": {
+            "enabled": true,
+            "minLevel": 35
+        },
+        "arbitration": {
+            "enabled": true
+        },
+        "sanctuaryOnslaught": {
+            "enabled": true
+        },
+        "syndicateMission": {
+            "enabled": true
+        },
+        "lichTerritoryMission": {
+            "enabled": true
+        }
+    }
+}

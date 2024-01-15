@@ -9,26 +9,30 @@ const sys = @import("parsing/sys.zig");
 const script = @import("parsing/script.zig");
 const game = @import("parsing/game.zig");
 const discord = @import("discord.zig");
+const cfg = @import("config.zig");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
-var machineUsername: ?[]const u8 = null;
+var config: cfg.Config = undefined;
 var startTime: i64 = undefined;
 var user: []u8 = undefined;
 var loggedOut = false;
 var checkMtime: i128 = 0;
-const webhookUrl = "a";
 
 pub fn main() !void {
-    std.debug.print("(Starting in 30s)\n", .{});
-    while (true) {
-        // 30s
-        std.time.sleep(30_000_000_000);
-        startTime = std.time.timestamp();
-        const logFilePath = try getWarframeLogFile();
-        defer allocator.free(logFilePath);
-        const file = try fs.openFileAbsolute(logFilePath, .{});
+    config = cfg.Config.get(allocator) catch |err| {
+        std.log.err("Failed to load config file: {}\n", .{err});
+        std.time.sleep(5_000_000_000);
+        return;
+    };
 
+    while (true) {
+        startTime = std.time.timestamp();
+        const file = fs.openFileAbsolute(config.warframeLogFile, .{}) catch |err| {
+            std.log.err("Failed to open log file: {}\n", .{err});
+            std.time.sleep(5_000_000_000);
+            return;
+        };
         defer file.close();
         const stat = try file.stat();
         if (stat.mtime < checkMtime) {
@@ -44,40 +48,26 @@ pub fn main() !void {
                 break;
             }
 
-            const read = try reader.read(&buf);
-            try lineIterate(buf[0..read], if (read < buf.len) read else null);
+            const read = reader.read(&buf) catch |err| {
+                std.log.err("Failed to read log file: {}\n", .{err});
+                std.time.sleep(5_000_000_000);
+                return;
+            };
+            lineIterate(buf[0..read], if (read < buf.len) read else null) catch |err| {
+                std.log.err("Failed to iterate over block: {s}\nblock:\n", .{ err, buf[0..read] });
+                std.time.sleep(5_000_000_000);
+                return;
+            };
             if (read < buf.len) {
                 // 3s
                 std.time.sleep(3_000_000_000);
                 continue;
             }
         }
+
+        // 30s
+        std.time.sleep(30_000_000_000);
     }
-}
-
-fn getWarframeLogFile() ![]const u8 {
-    if (builtin.os.tag == .windows) {
-        if (machineUsername == null) {
-            machineUsername = try std.process.getEnvVarOwned(allocator, "USERNAME");
-        }
-
-        return std.fmt.allocPrint(allocator,
-            \\C:\Users\{s}\AppData\Local\Warframe\EE.log
-        , .{machineUsername.?});
-    }
-
-    if (builtin.os.tag == .linux) {
-        if (machineUsername == null) {
-            machineUsername = try std.process.getEnvVarOwned(allocator, "USER");
-        }
-
-        // TODO
-        return std.fmt.allocPrint(allocator,
-            \\/home/{s}/.local/share/Steam/steamapps/compatdata/230410/pfx/drive_c/users/steamuser/Saved Games/
-        , .{machineUsername.?});
-    }
-
-    return anyerror.PlatformUnsupported;
 }
 
 fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
@@ -93,6 +83,7 @@ fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
 var readingObject: bool = false;
 
 fn lineAction(line: []const u8) void {
+    std.debug.print("line: {s}\n", .{line});
     if (readingObject) {
         if (try_extract.isObjectDumpEnd(line)) {
             readingObject = false;
@@ -263,70 +254,70 @@ pub fn secSinceStart() i64 {
 }
 
 fn missionEnd() !void {
-    var mission_str: []const u8 = undefined;
-    defer allocator.free(mission_str);
+    var mission_str: []const u8 = "NOTSET";
+    defer {
+        if (!std.mem.eql(u8, mission_str, "NOTSET")) allocator.free(mission_str);
+    }
     var desc: ?[]const u8 = null;
     var color: i32 = 65400;
-    switch (CurrentMission.objective) {
-        .MT_DEFENSE => {
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed {} waves of defense in {s}! ({}-{})", .{
-                user,
-                CurrentMission.successCount,
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
-        },
-        .MT_ENDLESS_EXTERMINATION => {
-            if (std.mem.containsAtLeast(u8, CurrentMission.name, 1, "Elite")) {
-                mission_str = try std.fmt.allocPrint(allocator, "{s} Completed {s}! ({}-{})", .{
-                    user,
-                    CurrentMission.name,
-                    CurrentMission.minLevel,
-                    CurrentMission.maxLevel,
-                });
-            } else {
-                mission_str = try std.fmt.allocPrint(allocator, "{s} cleared {} stages of {s}! ({}-{})", .{
-                    user,
-                    CurrentMission.successCount,
-                    CurrentMission.name,
-                    CurrentMission.minLevel,
-                    CurrentMission.maxLevel,
-                });
+    switch (CurrentMission.kind) {
+        .EidolonHunt => {
+            if (!config.notifications.eidolonHunt.enabled) {
+                return;
             }
-        },
-        // TODO
-        // .MT_LANDSCAPE => {
-        //     std.debug.print("{s} finished {} bounties in {s}! ({}-{})\n", .{
-        //         user,
-        //         CurrentMission.successCount,
-        //         CurrentMission.name,
-        //         CurrentMission.minLevel,
-        //         CurrentMission.maxLevel,
-        //     });
-        // },
-        .MT_SURVIVAL => {
-            mission_str = try std.fmt.allocPrint(allocator, "{s} Survived {} minutes in {s}! ({}-{})", .{
-                user,
-                @divTrunc(std.time.timestamp() - CurrentMission.startedAt, 60),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
-        },
-        .MT_RAILJACK => {
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Railjack mission!\n", .{
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed an Eidolon hunt!\n", .{
                 user,
             });
         },
-        else => {
-            switch (CurrentMission.kind) {
-                .EidolonHunt => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed an Eidolon hunt!\n", .{
+        .Normal => {
+            if (!config.notifications.normalMission.enabled or config.notifications.normalMission.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            switch (CurrentMission.objective) {
+                .MT_DEFENSE => {
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed {} waves of defense in {s}! ({}-{})", .{
+                        user,
+                        CurrentMission.successCount,
+                        CurrentMission.name,
+                        CurrentMission.minLevel,
+                        CurrentMission.maxLevel,
+                    });
+                },
+                .MT_ENDLESS_EXTERMINATION => {
+                    if (std.mem.containsAtLeast(u8, CurrentMission.name, 1, "Elite")) {
+                        mission_str = try std.fmt.allocPrint(allocator, "{s} Completed {s}! ({}-{})", .{
+                            user,
+                            CurrentMission.name,
+                            CurrentMission.minLevel,
+                            CurrentMission.maxLevel,
+                        });
+                    } else {
+                        mission_str = try std.fmt.allocPrint(allocator, "{s} cleared {} stages of {s}! ({}-{})", .{
+                            user,
+                            CurrentMission.successCount,
+                            CurrentMission.name,
+                            CurrentMission.minLevel,
+                            CurrentMission.maxLevel,
+                        });
+                    }
+                },
+                .MT_SURVIVAL => {
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} Survived {} minutes in {s}! ({}-{})", .{
+                        user,
+                        @divTrunc(std.time.timestamp() - CurrentMission.startedAt, 60),
+                        CurrentMission.name,
+                        CurrentMission.minLevel,
+                        CurrentMission.maxLevel,
+                    });
+                },
+                .MT_RAILJACK => {
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Railjack mission!\n", .{
                         user,
                     });
                 },
-                .Normal => {
+                else => {
                     mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission: {s}! ({}-{})", .{
                         user,
                         CurrentMission.name,
@@ -334,56 +325,127 @@ fn missionEnd() !void {
                         CurrentMission.maxLevel,
                     });
                 },
-                .Sortie => {
-                    if (!isFinalSortieMission()) {
-                        return;
-                    }
-
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed today's sortie!\n", .{user});
-                },
-                .Nightmare, .Kuva, .Syndicate => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
-                        user,
-                        CurrentMission.name,
-                        @tagName(CurrentMission.kind),
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                    });
-                },
-                .KuvaFlood => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Kuva Flood mission: {s}! ({}-{})", .{
-                        user,
-                        CurrentMission.name,
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                    });
-                },
-                .SteelPath => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Steel Path mission: {s}! ({}-{})", .{
-                        user,
-                        CurrentMission.name,
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                    });
-                },
-                .ControlledTerritory => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission in Kuva Lich territory: {s}! ({}-{})", .{
-                        user,
-                        CurrentMission.name,
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                    });
-                },
-                else => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission: {s}! ({}-{}, {s})\n", .{
-                        user,
-                        CurrentMission.name,
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                        @tagName(CurrentMission.kind),
-                    });
-                },
             }
+        },
+        .Sortie => {
+            if (!config.notifications.dailySortie.enabled) {
+                return;
+            }
+
+            if (!isFinalSortieMission()) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed today's sortie!\n", .{user});
+        },
+        .Nightmare => {
+            if (!config.notifications.nightmareMission.enabled or config.notifications.nightmareMission.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
+                user,
+                CurrentMission.name,
+                @tagName(CurrentMission.kind),
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .Kuva => {
+            if (!config.notifications.kuvaSiphon.enabled or config.notifications.kuvaSiphon.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
+                user,
+                CurrentMission.name,
+                @tagName(CurrentMission.kind),
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .Syndicate => {
+            if (!config.notifications.syndicateMission.enabled or config.notifications.syndicateMission.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
+                user,
+                CurrentMission.name,
+                @tagName(CurrentMission.kind),
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .KuvaFlood => {
+            if (!config.notifications.kuvaFlood.enabled or config.notifications.kuvaFlood.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Kuva Flood mission: {s}! ({}-{})", .{
+                user,
+                CurrentMission.name,
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .SteelPath => {
+            if (!config.notifications.steelPathMission.enabled or config.notifications.steelPathMission.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Steel Path mission: {s}! ({}-{})", .{
+                user,
+                CurrentMission.name,
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .ControlledTerritory => {
+            if (!config.notifications.lichTerritoryMission.enabled or config.notifications.lichTerritoryMission.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission in Kuva Lich territory: {s}! ({}-{})", .{
+                user,
+                CurrentMission.name,
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .Arbitration => {
+            if (!config.notifications.arbitration.enabled or config.notifications.arbitration.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed an arbitration mission: {s}! ({}-{})", .{
+                user,
+                CurrentMission.name,
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => {
+            if (!config.notifications.voidFissure.enabled or config.notifications.voidFissure.minLevel < CurrentMission.minLevel) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
+                user,
+                @tagName(CurrentMission.kind),
+                CurrentMission.name,
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
+        .TreasureHunt => {
+            if (!config.notifications.weeklyAyatanMission.enabled) {
+                return;
+            }
+
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed the weekly ayatan hunt mission!", .{
+                user,
+            });
         },
     }
 
@@ -410,10 +472,12 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32) v
 
     embed_arr[0] = embed;
     const message = discord.Message{
+        .avatar_url = config.profilePictureUrl,
+        .username = user,
         .embeds = embed_arr,
     };
 
-    const status = message.SendWebhook(allocator, webhookUrl) catch |send_err| {
+    const status = message.SendWebhook(allocator, config.webhookUrl) catch |send_err| {
         std.log.err("Failed to send webhook: {}\n", .{send_err});
         return;
     };

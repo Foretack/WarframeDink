@@ -2,6 +2,8 @@ const std = @import("std");
 const http = @import("std").http;
 
 pub const Message = struct {
+    avatar_url: ?[]const u8 = null,
+    username: ?[]const u8 = null,
     content: ?[]const u8 = null,
     embeds: ?[]Embed = null,
 
