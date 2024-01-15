@@ -13,7 +13,7 @@ const discord = @import("discord.zig");
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
 var machineUsername: ?[]const u8 = null;
-const startTime = std.time.timestamp() + 30;
+var startTime: i64 = undefined;
 var user: []u8 = undefined;
 var loggedOut = false;
 var checkMtime: i128 = 0;
@@ -24,6 +24,7 @@ pub fn main() !void {
     while (true) {
         // 30s
         std.time.sleep(30_000_000_000);
+        startTime = std.time.timestamp();
         const logFilePath = try getWarframeLogFile();
         defer allocator.free(logFilePath);
         const file = try fs.openFileAbsolute(logFilePath, .{});
@@ -123,7 +124,10 @@ fn lineAction(line: []const u8) void {
                 loggedOut = false;
                 std.debug.print("{s} logged in\n", .{user});
             } else if (sys.missionEnd(log)) {
-                missionEnd();
+                missionEnd() catch |alloc_err| {
+                    std.log.err("Allocation error: {}\n", .{alloc_err});
+                    return;
+                };
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
                 const message_str = std.fmt.allocPrint(allocator, "{s} completed a {s} Nightwave challenge!\n", .{
                     user,
@@ -134,7 +138,7 @@ fn lineAction(line: []const u8) void {
                 };
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, nw_challenge.name, 16711680);
+                sendDiscordMessage(message_str, nw_challenge.name, 16449791);
             } else if (sys.exitingGame(log)) {
                 std.debug.print("{s} logged out\n", .{user});
                 loggedOut = true;
@@ -258,46 +262,37 @@ pub fn secSinceStart() i64 {
     return std.time.timestamp() - startTime;
 }
 
-fn missionEnd() void {
+fn missionEnd() !void {
     var mission_str: []const u8 = undefined;
     defer allocator.free(mission_str);
     var desc: ?[]const u8 = null;
     var color: i32 = 65400;
     switch (CurrentMission.objective) {
         .MT_DEFENSE => {
-            mission_str = std.fmt.allocPrint(allocator, "{s} completed {} waves of defense in {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed {} waves of defense in {s}! ({}-{})", .{
                 user,
                 CurrentMission.successCount,
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
-            }) catch |err| {
-                std.log.err("Allocation error: {}\n", .{err});
-                return;
-            };
+            });
         },
         .MT_ENDLESS_EXTERMINATION => {
             if (std.mem.containsAtLeast(u8, CurrentMission.name, 1, "Elite")) {
-                mission_str = std.fmt.allocPrint(allocator, "{s} Completed {s}! ({}-{})", .{
+                mission_str = try std.fmt.allocPrint(allocator, "{s} Completed {s}! ({}-{})", .{
                     user,
                     CurrentMission.name,
                     CurrentMission.minLevel,
                     CurrentMission.maxLevel,
-                }) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                });
             } else {
-                mission_str = std.fmt.allocPrint(allocator, "{s} cleared {} stages of {s}! ({}-{})", .{
+                mission_str = try std.fmt.allocPrint(allocator, "{s} cleared {} stages of {s}! ({}-{})", .{
                     user,
                     CurrentMission.successCount,
                     CurrentMission.name,
                     CurrentMission.minLevel,
                     CurrentMission.maxLevel,
-                }) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                });
             }
         },
         // TODO
@@ -311,112 +306,82 @@ fn missionEnd() void {
         //     });
         // },
         .MT_SURVIVAL => {
-            mission_str = std.fmt.allocPrint(allocator, "{s} Survived {} minutes in {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "{s} Survived {} minutes in {s}! ({}-{})", .{
                 user,
                 @divTrunc(std.time.timestamp() - CurrentMission.startedAt, 60),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
-            }) catch |err| {
-                std.log.err("Allocation error: {}\n", .{err});
-                return;
-            };
+            });
         },
         .MT_RAILJACK => {
-            mission_str = std.fmt.allocPrint(allocator, "{s} completed a Railjack mission!\n", .{
+            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Railjack mission!\n", .{
                 user,
-            }) catch |err| {
-                std.log.err("Allocation error: {}\n", .{err});
-                return;
-            };
+            });
         },
         else => {
             switch (CurrentMission.kind) {
                 .EidolonHunt => {
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed an Eidolon hunt!\n", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed an Eidolon hunt!\n", .{
                         user,
-                    }) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    });
                 },
                 .Normal => {
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed a mission: {s}! ({}-{})", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission: {s}! ({}-{})", .{
                         user,
                         CurrentMission.name,
                         CurrentMission.minLevel,
                         CurrentMission.maxLevel,
-                    }) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    });
                 },
                 .Sortie => {
                     if (!isFinalSortieMission()) {
                         return;
                     }
 
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed today's sortie!\n", .{user}) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed today's sortie!\n", .{user});
                 },
                 .Nightmare, .Kuva, .Syndicate => {
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
                         user,
                         CurrentMission.name,
                         @tagName(CurrentMission.kind),
                         CurrentMission.minLevel,
                         CurrentMission.maxLevel,
-                    }) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    });
                 },
                 .KuvaFlood => {
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed a Kuva Flood mission: {s}! ({}-{})", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Kuva Flood mission: {s}! ({}-{})", .{
                         user,
                         CurrentMission.name,
                         CurrentMission.minLevel,
                         CurrentMission.maxLevel,
-                    }) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    });
                 },
                 .SteelPath => {
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed a Steel Path mission: {s}! ({}-{})", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Steel Path mission: {s}! ({}-{})", .{
                         user,
                         CurrentMission.name,
                         CurrentMission.minLevel,
                         CurrentMission.maxLevel,
-                    }) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    });
                 },
                 .ControlledTerritory => {
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed a mission in Kuva Lich territory: {s}! ({}-{})", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission in Kuva Lich territory: {s}! ({}-{})", .{
                         user,
                         CurrentMission.name,
                         CurrentMission.minLevel,
                         CurrentMission.maxLevel,
-                    }) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    });
                 },
                 else => {
-                    mission_str = std.fmt.allocPrint(allocator, "{s} completed a mission: {s}! ({}-{}, {s})\n", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission: {s}! ({}-{}, {s})\n", .{
                         user,
                         CurrentMission.name,
                         CurrentMission.minLevel,
                         CurrentMission.maxLevel,
                         @tagName(CurrentMission.kind),
-                    }) catch |err| {
-                        std.log.err("Allocation error: {}\n", .{err});
-                        return;
-                    };
+                    });
                 },
             }
         },
@@ -427,6 +392,10 @@ fn missionEnd() void {
 }
 
 fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32) void {
+    if (secSinceStart() < 3) {
+        return;
+    }
+
     const embed = discord.Embed{
         .title = title,
         .description = description,
@@ -437,6 +406,7 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32) v
         std.log.err("Failed to allocate embed array: {}\n", .{err});
         return;
     };
+    defer allocator.free(embed_arr);
 
     embed_arr[0] = embed;
     const message = discord.Message{
