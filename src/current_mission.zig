@@ -15,7 +15,6 @@ pub const MissionKind = enum {
     Nightmare,
     Kuva,
     KuvaFlood,
-    Fissure,
     SteelPath,
     TreasureHunt,
     Sortie,
