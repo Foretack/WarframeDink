@@ -11,23 +11,42 @@ const Game = @import("parsing/game.zig");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
+const startTime = std.time.timestamp() + 30;
 var user: []u8 = undefined;
+var loggedOut = false;
+var checkMtime: i128 = 0;
 
 pub fn main() !void {
-    const file = try fs.openFileAbsolute(
-        \\C:\Users\VOICE\AppData\Local\Warframe\EE.log
-    , .{});
-
-    defer file.close();
-    const reader = file.reader();
-    var buf: [8192]u8 = undefined;
+    std.debug.print("(Starting in 30s)\n", .{});
     while (true) {
-        const read = try reader.read(&buf);
-        try lineIterate(buf[0..read], if (read < buf.len) read else null);
-        if (read < buf.len) {
-            // 3s
-            std.time.sleep(3_000_000_000);
+        // 30s
+        std.time.sleep(30_000_000_000);
+        const file = try fs.openFileAbsolute(
+            \\C:\Users\VOICE\AppData\Local\Warframe\EE.log
+        , .{});
+
+        defer file.close();
+        const stat = try file.stat();
+        if (stat.mtime < checkMtime) {
+            std.debug.print("File has not changed since user logout. Waiting for changes...\n", .{});
             continue;
+        }
+
+        const reader = file.reader();
+        var buf: [8192]u8 = undefined;
+        while (true) {
+            if (loggedOut and stat.mtime < checkMtime) {
+                std.debug.print("User logged out. Closing file...\n", .{});
+                break;
+            }
+
+            const read = try reader.read(&buf);
+            try lineIterate(buf[0..read], if (read < buf.len) read else null);
+            if (read < buf.len) {
+                // 3s
+                std.time.sleep(3_000_000_000);
+                continue;
+            }
         }
     }
 }
@@ -73,6 +92,7 @@ fn lineAction(line: []const u8) void {
         .Sys => {
             if (Sys.loginUsername(log)) |username| {
                 user = allocator.dupe(u8, username) catch unreachable;
+                loggedOut = false;
                 std.debug.print("{s} logged in\n", .{user});
             } else if (Sys.missionEnd(log)) {
                 missionEnd();
@@ -80,6 +100,8 @@ fn lineAction(line: []const u8) void {
                 std.debug.print("{s} completed a {s} Nightwave challenge: {s}!\n", .{ user, @tagName(nw_challenge.tier), nw_challenge.name });
             } else if (Sys.exitingGame(log)) {
                 std.debug.print("{s} logged out\n", .{user});
+                loggedOut = true;
+                checkMtime = std.time.nanoTimestamp();
             } else if (Sys.rivenSliverPickup(log)) {
                 std.debug.print("{s} found a Riven Sliver!\n", .{user});
             }
@@ -134,6 +156,10 @@ fn lineIsSeq(line: []const u8) bool {
     }
 
     return false;
+}
+
+pub fn secSinceStart() i64 {
+    return std.time.timestamp() - startTime;
 }
 
 fn logDecode(line: []const u8) ?log_types.LogEntry {

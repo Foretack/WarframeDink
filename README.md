@@ -34,6 +34,5 @@
 - Zenuka/Grineer defeat
 - Lich ~~spawn~~/kill/mercy
 - Corpus lich?
-- Excavation/Interception/Other Endless
 - Archon hunts
 - Profit taker
