@@ -350,24 +350,20 @@ fn missionEnd() !void {
                 },
                 .MT_ENDLESS_EXTERMINATION => {
                     if (std.mem.containsAtLeast(u8, CurrentMission.name, 1, "Elite")) {
-                        mission_str = try std.fmt.allocPrint(allocator, "{s} Completed {s}! ({}-{})", .{
+                        mission_str = try std.fmt.allocPrint(allocator, "{s} completed {s}!", .{
                             user,
                             CurrentMission.name,
-                            CurrentMission.minLevel,
-                            CurrentMission.maxLevel,
                         });
                     } else {
-                        mission_str = try std.fmt.allocPrint(allocator, "{s} cleared {} stages of {s}! ({}-{})", .{
+                        mission_str = try std.fmt.allocPrint(allocator, "{s} cleared {} stages of {s}!", .{
                             user,
                             CurrentMission.successCount,
                             CurrentMission.name,
-                            CurrentMission.minLevel,
-                            CurrentMission.maxLevel,
                         });
                     }
                 },
                 .MT_SURVIVAL => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} Survived {} minutes in {s}! ({}-{})", .{
+                    mission_str = try std.fmt.allocPrint(allocator, "{s} survived {} minutes in {s}! ({}-{})", .{
                         user,
                         @divTrunc(std.time.timestamp() - CurrentMission.startedAt, 60),
                         CurrentMission.name,
@@ -408,8 +404,8 @@ fn missionEnd() !void {
 
             mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
                 user,
-                CurrentMission.name,
                 @tagName(CurrentMission.kind),
+                CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
             });
@@ -421,8 +417,8 @@ fn missionEnd() !void {
 
             mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
                 user,
-                CurrentMission.name,
                 @tagName(CurrentMission.kind),
+                CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
             });
@@ -434,8 +430,8 @@ fn missionEnd() !void {
 
             mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
                 user,
-                CurrentMission.name,
                 @tagName(CurrentMission.kind),
+                CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
             });

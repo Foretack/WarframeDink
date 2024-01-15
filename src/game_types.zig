@@ -85,10 +85,9 @@ pub const NightwaveChallenges = enum {
     SeasonWeeklyCatchRareVenusFish,
     SeasonWeeklyCatchRarePlainsFish,
 
-    SeasonWeeklyPermanentCompleteMissions7,
-    SeasonWeeklyPermanentKillEximus7,
-    SeasonWeeklyPermanentKillEnemies7,
-    SeasonWeeklyPermanentKillEnemies8,
+    SeasonWeeklyPermanentCompleteMissions,
+    SeasonWeeklyPermanentKillEximus,
+    SeasonWeeklyPermanentKillEnemies,
 
     SeasonWeeklyHardRailjackMissions,
     SeasonWeeklyHardFriendsProfitTaker,

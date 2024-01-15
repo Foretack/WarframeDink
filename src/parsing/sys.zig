@@ -49,7 +49,9 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
     const last_slash_idx = std.mem.lastIndexOf(u8, log.message, "/") orelse return null;
     var challenge_name: []const u8 = undefined;
     @setEvalBranchQuota(3000);
-    const challenge = std.meta.stringToEnum(game_types.NightwaveChallenges, log.message[last_slash_idx + 1 ..]) orelse .UNKNOWN;
+    const last_char = log.message[log.message.len - 1];
+    const end_at_idx = if (last_char >= '0' and last_char <= '9') log.message.len - 1 else log.message.len;
+    const challenge = std.meta.stringToEnum(game_types.NightwaveChallenges, log.message[last_slash_idx + 1 .. end_at_idx]) orelse .UNKNOWN;
     challenge_name = switch (challenge) {
         .SeasonDailyPickUpMods => "Pick up 8 modules",
         .SeasonDailyVisitFeaturedDojo => "Visit a featured dojo",
@@ -126,9 +128,9 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyCatchRareVenusFish => "Catch 6 rare servofish in Orb Vallis",
         .SeasonWeeklyCatchRarePlainsFish => "Catch 6 rare fish in the Plains of Eidolon",
 
-        .SeasonWeeklyPermanentCompleteMissions7 => "Complete any 15 missions",
-        .SeasonWeeklyPermanentKillEnemies7 => "Kill 500 enemies",
-        .SeasonWeeklyPermanentKillEximus7 => "Kill 30 eximus enemies",
+        .SeasonWeeklyPermanentCompleteMissions => "Complete any 15 missions",
+        .SeasonWeeklyPermanentKillEnemies => "Kill 500 enemies",
+        .SeasonWeeklyPermanentKillEximus => "Kill 30 eximus enemies",
 
         .SeasonWeeklyHardRailjackMissions => "Complete 8 Railjack missions",
         .SeasonWeeklyHardFriendsProfitTaker => "Kill the Profit-Taker in Orb Vallis",
