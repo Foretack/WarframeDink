@@ -24,6 +24,7 @@ pub const NightwaveChallenges = enum {
     SeasonWeeklyLoyalty,
     SeasonDailyKillEnemiesWithRadiation,
     SeasonDailyTwoForOne,
+    SeasonDailyCompleteMission,
     UNKNOWN,
 };
 

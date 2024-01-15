@@ -61,6 +61,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
             .SeasonDailyKillEnemiesWithRadiation => "Kill 150 enemies with radiation damage",
             .SeasonDailyDeploySpecter => "Deploy a Specter",
             .SeasonDailyTwoForOne => "Pierce and kill 2 or more enemies in a single bow shot",
+            .SeasonDailyCompleteMission => "Complete a mission",
             else => log.message[last_slash_idx + 1 ..],
         };
 

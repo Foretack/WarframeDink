@@ -120,3 +120,15 @@ pub fn isMasteryRankUp(log: log_types.LogEntry) ?u8 {
 
     return rank;
 }
+
+pub fn lichDefeated(log: log_types.LogEntry) bool {
+    if (!std.mem.eql(u8, log.luaFile orelse return false, "NemesisAssassinate.lua")) {
+        return false;
+    }
+
+    if (!std.mem.eql(u8, log.message, ": Lich killed, unlocking door")) {
+        return false;
+    }
+
+    return true;
+}

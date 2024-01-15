@@ -86,7 +86,7 @@ fn lineAction(line: []const u8) void {
         return;
     }
 
-    const log = logDecode(line) orelse return;
+    const log = log_types.parseLog(line) orelse return;
     if (log.level != .Info) return;
     switch (log.category) {
         .Sys => {
@@ -127,6 +127,8 @@ fn lineAction(line: []const u8) void {
                 std.debug.print("{s} reached MR {}\n", .{ user, new_rank });
             } else if (Script.stalkerDefeated(log)) {
                 std.debug.print("{s} defeated the stalker!\n", .{user});
+            } else if (Script.lichDefeated(log)) {
+                std.debug.print("{s} defeated their Kuva Lich!\n", .{user});
             }
         },
         .Game => {
@@ -160,36 +162,6 @@ fn lineIsSeq(line: []const u8) bool {
 
 pub fn secSinceStart() i64 {
     return std.time.timestamp() - startTime;
-}
-
-fn logDecode(line: []const u8) ?log_types.LogEntry {
-    const first_space = (std.mem.indexOf(u8, line, " ") orelse return null) + 1;
-    const second_space = (std.mem.indexOf(u8, line[first_space..], " ") orelse return null) + first_space;
-    const category = std.meta.stringToEnum(log_types.LogCategory, line[first_space..second_space]) orelse .UNKNOWN;
-    var level: log_types.LogLevel = undefined;
-    var lua_file: ?[]const u8 = null;
-    var message: []const u8 = undefined;
-    if (category == .UNKNOWN) {
-        level = .UNKNOWN;
-        message = line[second_space..];
-    } else {
-        const third_space = std.mem.indexOf(u8, line[second_space + 1 ..], " ").? + second_space;
-        level = std.meta.stringToEnum(log_types.LogLevel, line[second_space + 2 .. third_space - 1]) orelse .UNKNOWN;
-        const lua_file_end = std.mem.indexOf(u8, line[third_space..], ".lua");
-        if (lua_file_end) |end_idx| {
-            lua_file = line[third_space + 2 .. third_space + end_idx + 4];
-            message = line[third_space + end_idx + 4 ..];
-        } else {
-            message = line[third_space..];
-        }
-    }
-
-    return log_types.LogEntry{
-        .category = category,
-        .level = level,
-        .luaFile = lua_file,
-        .message = message,
-    };
 }
 
 fn missionEnd() void {
