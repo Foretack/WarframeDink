@@ -10,9 +10,11 @@ pub const Message = struct {
     pub fn SendWebhook(self: Message, allocator: std.mem.Allocator, webhookUrl: []const u8) !http.Status {
         const uri = try std.Uri.parse(webhookUrl);
 
-        const json = try std.json.stringifyAlloc(allocator, self, .{ .emit_null_optional_fields = false });
+        const json = try std.json.stringifyAlloc(allocator, self, .{
+            .emit_null_optional_fields = false,
+            .emit_strings_as_arrays = false,
+        });
         defer allocator.free(json);
-
         var client = http.Client{ .allocator = allocator };
         defer client.deinit();
 

@@ -31,12 +31,14 @@ pub fn main() !void {
         const file = fs.openFileAbsolute(config.warframeLogFile, .{}) catch |err| {
             std.log.err("Failed to open log file: {}\n", .{err});
             std.time.sleep(5_000_000_000);
-            return;
+            // I think warframe deletes the file on startup which is not cool, so we should continue until we find it
+            continue;
         };
         defer file.close();
         const stat = try file.stat();
         if (stat.mtime < checkMtime) {
             std.debug.print("File has not changed since user logout. Waiting for change...\n", .{});
+            std.time.sleep(30_000_000_000);
             continue;
         }
 
@@ -83,7 +85,6 @@ fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
 var readingObject: bool = false;
 
 fn lineAction(line: []const u8) void {
-    std.debug.print("line: {s}\n", .{line});
     if (readingObject) {
         if (try_extract.isObjectDumpEnd(line)) {
             readingObject = false;
@@ -114,12 +115,27 @@ fn lineAction(line: []const u8) void {
                 user = allocator.dupe(u8, username) catch unreachable;
                 loggedOut = false;
                 std.debug.print("{s} logged in\n", .{user});
+                if (!config.notifications.login.enabled) {
+                    return;
+                }
+
+                const message_str = std.fmt.allocPrint(allocator, "{s} logged in\n", .{user}) catch |err| {
+                    std.log.err("Allocation error: {}\n", .{err});
+                    return;
+                };
+                defer allocator.free(message_str);
+
+                sendDiscordMessage(message_str, null, 1155897);
             } else if (sys.missionEnd(log)) {
                 missionEnd() catch |alloc_err| {
                     std.log.err("Allocation error: {}\n", .{alloc_err});
                     return;
                 };
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
+                if (!config.notifications.nightwaveChallengeComplete.enabled) {
+                    return;
+                }
+
                 const message_str = std.fmt.allocPrint(allocator, "{s} completed a {s} Nightwave challenge!\n", .{
                     user,
                     @tagName(nw_challenge.tier),
@@ -134,7 +150,22 @@ fn lineAction(line: []const u8) void {
                 std.debug.print("{s} logged out\n", .{user});
                 loggedOut = true;
                 checkMtime = std.time.nanoTimestamp() + 10_000_000_000;
+                if (!config.notifications.logout.enabled) {
+                    return;
+                }
+
+                const message_str = std.fmt.allocPrint(allocator, "{s} logged out\n", .{user}) catch |err| {
+                    std.log.err("Allocation error: {}\n", .{err});
+                    return;
+                };
+                defer allocator.free(message_str);
+
+                sendDiscordMessage(message_str, null, 13699683);
             } else if (sys.rivenSliverPickup(log)) {
+                if (!config.notifications.rivenSliverPickup.enabled) {
+                    return;
+                }
+
                 std.debug.print("{s} found a Riven Sliver!\n", .{user});
                 const message_str = std.fmt.allocPrint(allocator, "{s} found a Riven Sliver!\n", .{user}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
@@ -154,6 +185,10 @@ fn lineAction(line: []const u8) void {
             } else if (script.missionSuccess(log)) {
                 CurrentMission.successCount += 1;
             } else if (script.missionFailure(log)) {
+                if (!config.notifications.missionFailed.enabled) {
+                    return;
+                }
+
                 const message_str = std.fmt.allocPrint(allocator, "{s} failed a mission\n", .{user}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
@@ -162,6 +197,10 @@ fn lineAction(line: []const u8) void {
 
                 sendDiscordMessage(message_str, CurrentMission.name, 15036416);
             } else if (script.acolyteDefeated(log)) |acolyte| {
+                if (!config.notifications.acolyteDefeat.enabled) {
+                    return;
+                }
+
                 std.debug.print("{s} defeated an Acolyte! ({s})\n", .{ user, acolyte });
                 const message_str = std.fmt.allocPrint(allocator, "{s} defeated an Acolyte! ({s})", .{ user, acolyte }) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
@@ -172,6 +211,10 @@ fn lineAction(line: []const u8) void {
                 sendDiscordMessage(message_str, null, 1);
             } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
+                if (!config.notifications.eidolonCaptured.enabled) {
+                    return;
+                }
+
                 const message_str = std.fmt.allocPrint(allocator, "{s} captured an Eidolon!", .{user}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
@@ -180,6 +223,10 @@ fn lineAction(line: []const u8) void {
 
                 sendDiscordMessage(message_str, null, 65535);
             } else if (script.kuvaLichSpan(log)) {
+                if (!config.notifications.lichSpawn.enabled) {
+                    return;
+                }
+
                 const message_str = std.fmt.allocPrint(allocator, "{s} spawned a Kuva Lich!", .{user}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
@@ -188,6 +235,10 @@ fn lineAction(line: []const u8) void {
 
                 sendDiscordMessage(message_str, null, 5776672);
             } else if (script.isMasteryRankUp(log)) |new_rank| {
+                if (!config.notifications.masteryRankUp.enabled) {
+                    return;
+                }
+
                 std.debug.print("{s} reached MR {}\n", .{ user, new_rank });
                 const message_str = std.fmt.allocPrint(allocator, "{s} reached MR {}", .{ user, new_rank }) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
@@ -197,6 +248,10 @@ fn lineAction(line: []const u8) void {
 
                 sendDiscordMessage(message_str, null, 30940);
             } else if (script.stalkerDefeated(log)) {
+                if (!config.notifications.stalkerDefeat.enabled) {
+                    return;
+                }
+
                 const message_str = std.fmt.allocPrint(allocator, "{s} defeated the stalker!", .{user}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
@@ -205,6 +260,10 @@ fn lineAction(line: []const u8) void {
 
                 sendDiscordMessage(message_str, null, 1);
             } else if (script.lichDefeated(log)) {
+                if (!config.notifications.lichDefeat.enabled) {
+                    return;
+                }
+
                 const message_str = std.fmt.allocPrint(allocator, "{s} defeated their Kuva Lich!", .{user}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
@@ -218,6 +277,10 @@ fn lineAction(line: []const u8) void {
             if (game.hostMigration(log)) {
                 std.debug.print("{s} is suffering host migration\n", .{user});
             } else if (game.userDeath(log, user)) |killed_by| {
+                if (!config.notifications.death.enabled) {
+                    return;
+                }
+
                 const message_str = std.fmt.allocPrint(allocator, "{s} died to a {s}", .{ user, killed_by }) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
@@ -271,7 +334,7 @@ fn missionEnd() !void {
             });
         },
         .Normal => {
-            if (!config.notifications.normalMission.enabled or config.notifications.normalMission.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.normalMission.enabled or config.notifications.normalMission.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -339,7 +402,7 @@ fn missionEnd() !void {
             mission_str = try std.fmt.allocPrint(allocator, "{s} completed today's sortie!\n", .{user});
         },
         .Nightmare => {
-            if (!config.notifications.nightmareMission.enabled or config.notifications.nightmareMission.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.nightmareMission.enabled or config.notifications.nightmareMission.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -352,7 +415,7 @@ fn missionEnd() !void {
             });
         },
         .Kuva => {
-            if (!config.notifications.kuvaSiphon.enabled or config.notifications.kuvaSiphon.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.kuvaSiphon.enabled or config.notifications.kuvaSiphon.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -365,7 +428,7 @@ fn missionEnd() !void {
             });
         },
         .Syndicate => {
-            if (!config.notifications.syndicateMission.enabled or config.notifications.syndicateMission.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.syndicateMission.enabled or config.notifications.syndicateMission.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -378,7 +441,7 @@ fn missionEnd() !void {
             });
         },
         .KuvaFlood => {
-            if (!config.notifications.kuvaFlood.enabled or config.notifications.kuvaFlood.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.kuvaFlood.enabled or config.notifications.kuvaFlood.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -390,7 +453,7 @@ fn missionEnd() !void {
             });
         },
         .SteelPath => {
-            if (!config.notifications.steelPathMission.enabled or config.notifications.steelPathMission.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.steelPathMission.enabled or config.notifications.steelPathMission.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -402,7 +465,7 @@ fn missionEnd() !void {
             });
         },
         .ControlledTerritory => {
-            if (!config.notifications.lichTerritoryMission.enabled or config.notifications.lichTerritoryMission.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.lichTerritoryMission.enabled or config.notifications.lichTerritoryMission.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -414,7 +477,7 @@ fn missionEnd() !void {
             });
         },
         .Arbitration => {
-            if (!config.notifications.arbitration.enabled or config.notifications.arbitration.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.arbitration.enabled or config.notifications.arbitration.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
@@ -426,7 +489,7 @@ fn missionEnd() !void {
             });
         },
         .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => {
-            if (!config.notifications.voidFissure.enabled or config.notifications.voidFissure.minLevel < CurrentMission.minLevel) {
+            if (!config.notifications.voidFissure.enabled or config.notifications.voidFissure.minLevel > CurrentMission.minLevel) {
                 return;
             }
 

@@ -81,6 +81,8 @@ pub fn missionKind(logMessage: []const u8) MissionKind {
         return .Syndicate;
     } else if (std.mem.endsWith(u8, logMessage, "Controlled Territory")) {
         return .ControlledTerritory;
+    } else if (std.mem.indexOf(u8, logMessage, "Weekly Ayatan") != null) {
+        return .TreasureHunt;
     }
 
     return .Normal;

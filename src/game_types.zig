@@ -88,6 +88,7 @@ pub const NightwaveChallenges = enum {
     SeasonWeeklyPermanentCompleteMissions7,
     SeasonWeeklyPermanentKillEximus7,
     SeasonWeeklyPermanentKillEnemies7,
+    SeasonWeeklyPermanentKillEnemies8,
 
     SeasonWeeklyHardRailjackMissions,
     SeasonWeeklyHardFriendsProfitTaker,

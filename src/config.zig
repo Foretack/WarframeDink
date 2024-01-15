@@ -35,10 +35,9 @@ pub const Config = struct {
     pub fn get(allocator: std.mem.Allocator) !Config {
         const file = try std.fs.cwd().openFile("config.json", .{});
         defer file.close();
+        // deallocing this breaks shit
         const content = try file.readToEndAlloc(allocator, 8192);
-        defer allocator.free(content);
         const json = try std.json.parseFromSlice(Config, allocator, content, .{ .ignore_unknown_fields = true });
-        std.debug.print("Config loaded\n {s}\n {s}\n {s}\n", .{ json.value.profilePictureUrl, json.value.warframeLogFile, json.value.webhookUrl });
         return json.value;
     }
 };
