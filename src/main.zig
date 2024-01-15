@@ -1,13 +1,14 @@
 const std = @import("std");
-const fs = @import("std").fs;
+const fs = std.fs;
 const builtin = @import("builtin");
 const log_types = @import("log_types.zig");
 const try_extract = @import("try_extract.zig");
 const mission_types = @import("current_mission.zig");
-const CurrentMission = @import("current_mission.zig").Mission;
-const Sys = @import("parsing/sys.zig");
-const Script = @import("parsing/script.zig");
-const Game = @import("parsing/game.zig");
+const CurrentMission = mission_types.Mission;
+const sys = @import("parsing/sys.zig");
+const script = @import("parsing/script.zig");
+const game = @import("parsing/game.zig");
+const discord = @import("discord.zig");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
@@ -16,6 +17,7 @@ const startTime = std.time.timestamp() + 30;
 var user: []u8 = undefined;
 var loggedOut = false;
 var checkMtime: i128 = 0;
+const webhookUrl = "I will probably leak this by accident";
 
 pub fn main() !void {
     std.debug.print("(Starting in 30s)\n", .{});
@@ -116,51 +118,73 @@ fn lineAction(line: []const u8) void {
     if (log.level != .Info) return;
     switch (log.category) {
         .Sys => {
-            if (Sys.loginUsername(log)) |username| {
+            if (sys.loginUsername(log)) |username| {
                 user = allocator.dupe(u8, username) catch unreachable;
                 loggedOut = false;
                 std.debug.print("{s} logged in\n", .{user});
-            } else if (Sys.missionEnd(log)) {
+            } else if (sys.missionEnd(log)) {
                 missionEnd();
-            } else if (Sys.nightwaveChallengeComplete(log)) |nw_challenge| {
-                std.debug.print("{s} completed a {s} Nightwave challenge: {s}!\n", .{ user, @tagName(nw_challenge.tier), nw_challenge.name });
-            } else if (Sys.exitingGame(log)) {
+            } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
+                const message_str = std.fmt.allocPrint(allocator, "{s} completed a {s} Nightwave challenge: {s}!\n", .{
+                    user,
+                    @tagName(nw_challenge.tier),
+                    nw_challenge.name,
+                }) catch |err| {
+                    std.log.err("Allocation error: {}\n", .{err});
+                    return;
+                };
+                defer allocator.free(message_str);
+
+                sendDiscordMessage(message_str, null, 16711680);
+            } else if (sys.exitingGame(log)) {
                 std.debug.print("{s} logged out\n", .{user});
                 loggedOut = true;
-                checkMtime = std.time.nanoTimestamp();
-            } else if (Sys.rivenSliverPickup(log)) {
+                checkMtime = std.time.nanoTimestamp() + 10_000_000_000;
+            } else if (sys.rivenSliverPickup(log)) {
                 std.debug.print("{s} found a Riven Sliver!\n", .{user});
             }
         },
         .Script => {
-            if (Script.missionInfo(log)) |mission_info| {
+            if (script.missionInfo(log)) |mission_info| {
                 allocator.free(CurrentMission.name);
                 CurrentMission.name = allocator.dupe(u8, mission_info.name) catch unreachable;
                 CurrentMission.startedAt = std.time.timestamp();
                 CurrentMission.kind = mission_info.kind;
-            } else if (Script.missionSuccess(log)) {
+            } else if (script.missionSuccess(log)) {
                 CurrentMission.successCount += 1;
-            } else if (Script.missionFailure(log)) {
+            } else if (script.missionFailure(log)) {
                 std.debug.print("{s} failed the mission: {s}\n", .{ user, CurrentMission.name });
-            } else if (Script.acolyteDefeated(log)) |acolyte| {
+            } else if (script.acolyteDefeated(log)) |acolyte| {
                 std.debug.print("{s} defeated an Acolyte! ({s})\n", .{ user, acolyte });
-            } else if (Script.eidolonCaptured(log)) {
+            } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
                 std.debug.print("{s} captured an Eidolon!\n", .{user});
-            } else if (Script.kuvaLichSpan(log)) {
+            } else if (script.kuvaLichSpan(log)) {
                 std.debug.print("{s} spawned a Kuva Lich!\n", .{user});
-            } else if (Script.isMasteryRankUp(log)) |new_rank| {
+            } else if (script.isMasteryRankUp(log)) |new_rank| {
                 std.debug.print("{s} reached MR {}\n", .{ user, new_rank });
-            } else if (Script.stalkerDefeated(log)) {
-                std.debug.print("{s} defeated the stalker!\n", .{user});
-            } else if (Script.lichDefeated(log)) {
-                std.debug.print("{s} defeated their Kuva Lich!\n", .{user});
+            } else if (script.stalkerDefeated(log)) {
+                const message_str = std.fmt.allocPrint(allocator, "{s} defeated the stalker!", .{user}) catch |err| {
+                    std.log.err("Allocation error: {}\n", .{err});
+                    return;
+                };
+                defer allocator.free(message_str);
+
+                sendDiscordMessage(message_str, null, 1);
+            } else if (script.lichDefeated(log)) {
+                const message_str = std.fmt.allocPrint(allocator, "{s} defeated their Kuva Lich!", .{user}) catch |err| {
+                    std.log.err("Allocation error: {}\n", .{err});
+                    return;
+                };
+                defer allocator.free(message_str);
+
+                sendDiscordMessage(message_str, null, 16777215);
             }
         },
         .Game => {
-            if (Game.hostMigration(log)) {
+            if (game.hostMigration(log)) {
                 std.debug.print("{s} is suffering host migration\n", .{user});
-            } else if (Game.userDeath(log, user)) |killed_by| {
+            } else if (game.userDeath(log, user)) |killed_by| {
                 std.debug.print("{s} died to a {s}\n", .{ user, killed_by });
             }
         },
@@ -267,6 +291,33 @@ fn missionEnd() void {
     }
 
     CurrentMission.successCount = 0;
+}
+
+fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32) void {
+    const embed = discord.Embed{
+        .title = title,
+        .description = description,
+        .color = color,
+    };
+
+    const embed_arr: []discord.Embed = allocator.alloc(discord.Embed, 1) catch |err| {
+        std.log.err("Failed to allocate embed array: {}\n", .{err});
+        return;
+    };
+
+    embed_arr[0] = embed;
+    const message = discord.Message{
+        .embeds = embed_arr,
+    };
+
+    const status = message.SendWebhook(allocator, webhookUrl) catch |send_err| {
+        std.log.err("Failed to send webhook: {}\n", .{send_err});
+        return;
+    };
+
+    if (status != .no_content) {
+        std.log.err("Webhook not sent: HTTP Status: {s}\n", .{@tagName(status)});
+    }
 }
 
 test "warframe log file exists" {
