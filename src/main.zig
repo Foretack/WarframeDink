@@ -171,7 +171,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                std.debug.print("Found a Riven Sliver!", .{user});
+                std.debug.print("Found a Riven Sliver!", .{});
                 const message_str = std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
