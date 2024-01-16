@@ -20,7 +20,11 @@ pub fn objectStrField(line: []const u8) ?struct { name: []const u8, value: []con
     if (trimmed[0] == '"') {
         const colon = std.mem.indexOf(u8, trimmed, ":") orelse return null;
         name = trimmed[1 .. colon - 2];
-        val = trimmed[colon + 2 ..];
+        if (trimmed.len > colon + 4 and trimmed[colon + 2] == '"') {
+            val = trimmed[colon + 3 .. trimmed.len - 2];
+        } else {
+            val = trimmed[colon + 2 .. trimmed.len - 1];
+        }
     } else {
         const eql = std.mem.indexOf(u8, trimmed, "=") orelse return null;
         name = trimmed[0..eql];
