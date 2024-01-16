@@ -136,9 +136,15 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} completed a {s} Nightwave challenge!\n", .{
+                const challenge_str = switch (nw_challenge.tier) {
+                    .Daily => "a daily",
+                    .Weekly => "a weekly",
+                    .EliteWeekly => "an elite weekly",
+                };
+
+                const message_str = std.fmt.allocPrint(allocator, "{s} completed {s} Nightwave challenge!", .{
                     user,
-                    @tagName(nw_challenge.tier),
+                    challenge_str,
                 }) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
