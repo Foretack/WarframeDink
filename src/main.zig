@@ -15,7 +15,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
 var config: cfg.Config = undefined;
 var startTime: i64 = undefined;
-var user: []u8 = undefined;
+var user: []const u8 = undefined;
 var loggedOut = false;
 var checkMtime: i128 = 0;
 
@@ -26,6 +26,7 @@ pub fn main() !void {
         return;
     };
 
+    user = config.username orelse undefined;
     while (true) {
         startTime = std.time.timestamp();
         const file = fs.openFileAbsolute(config.warframeLogFile, .{}) catch |err| {
@@ -112,7 +113,10 @@ fn lineAction(line: []const u8) void {
     switch (log.category) {
         .Sys => {
             if (sys.loginUsername(log)) |username| {
-                user = allocator.dupe(u8, username) catch unreachable;
+                if (config.username == null) {
+                    user = allocator.dupe(u8, username) catch unreachable;
+                }
+
                 loggedOut = false;
                 std.debug.print("{s} logged in\n", .{user});
                 if (!config.notifications.login.enabled) {

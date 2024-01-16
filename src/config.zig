@@ -1,6 +1,7 @@
 const std = @import("std");
 
 pub const Config = struct {
+    username: ?[]const u8,
     profilePictureUrl: []const u8,
     warframeLogFile: []const u8,
     webhookUrl: []const u8,
