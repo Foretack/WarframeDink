@@ -171,7 +171,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                std.debug.print("Found a Riven Sliver!", .{});
+                std.debug.print("Found a Riven Sliver!\n", .{});
                 const message_str = std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
@@ -337,48 +337,25 @@ fn missionEnd() !void {
             mission_str = try std.fmt.allocPrint(allocator, "Completed an Eidolon hunt!\n", .{});
         },
         .Normal => {
-            if (!config.notifications.normalMission.enabled or config.notifications.normalMission.minLevel > CurrentMission.minLevel) {
+            if (CurrentMission.objective == .MT_ENDLESS_EXTERMINATION) {
+                if (!config.notifications.sanctuaryOnslaught.enabled or config.notifications.sanctuaryOnslaught.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
+                mission_str = try std.fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
+            } else if (CurrentMission.objective == .MT_RAILJACK) {
+                mission_str = try std.fmt.allocPrint(allocator, "Completed a Railjack mission!", .{});
+                return;
+            } else if (!config.notifications.normalMission.enabled or config.notifications.normalMission.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
-            switch (CurrentMission.objective) {
-                .MT_DEFENSE => {
-                    mission_str = try std.fmt.allocPrint(allocator, "Completed {} waves of defense in {s}! ({}-{})", .{
-                        CurrentMission.successCount,
-                        CurrentMission.name,
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                    });
-                },
-                .MT_ENDLESS_EXTERMINATION => {
-                    if (std.mem.containsAtLeast(u8, CurrentMission.name, 1, "Elite")) {
-                        mission_str = try std.fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
-                    } else {
-                        mission_str = try std.fmt.allocPrint(allocator, "Cleared {} stages of {s}!", .{
-                            CurrentMission.successCount,
-                            CurrentMission.name,
-                        });
-                    }
-                },
-                .MT_SURVIVAL => {
-                    mission_str = try std.fmt.allocPrint(allocator, "Survived {} minutes in {s}! ({}-{})", .{
-                        @divTrunc(std.time.timestamp() - CurrentMission.startedAt, 60),
-                        CurrentMission.name,
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                    });
-                },
-                .MT_RAILJACK => {
-                    mission_str = try std.fmt.allocPrint(allocator, "Completed a Railjack mission!\n", .{});
-                },
-                else => {
-                    mission_str = try std.fmt.allocPrint(allocator, "Completed a mission: {s}! ({}-{})", .{
-                        CurrentMission.name,
-                        CurrentMission.minLevel,
-                        CurrentMission.maxLevel,
-                    });
-                },
-            }
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
+                CurrentMission.name,
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
         },
         .Sortie => {
             if (!config.notifications.dailySortie.enabled) {
@@ -396,7 +373,8 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Nightmare mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Nightmare {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -407,7 +385,8 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -418,7 +397,8 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a syndicate mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a syndicate {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -429,7 +409,8 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva Flood mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva Flood {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -440,7 +421,8 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Steel Path mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Steel Path {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -451,7 +433,8 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a mission in Kuva Lich territory: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva Lich territory {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -462,7 +445,8 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed an Arbitration mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed an Arbitration {s} mission: {s}! ({}-{})", .{
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -482,8 +466,9 @@ fn missionEnd() !void {
                 else => "???",
             };
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} fissure mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} fissure {s} mission: {s}! ({}-{})", .{
                 relic_str,
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -536,16 +521,17 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32) v
     }
 }
 
-test "warframe log file exists" {
-    if (builtin.os.tag == .windows) {
-        const username = try std.process.getEnvVarOwned(std.testing.allocator, "USERNAME");
-        defer std.testing.allocator.free(username);
-        std.debug.print("\nUSER IS {s}\n", .{username});
-        std.debug.print("MACHINE {}\n", .{builtin.os.tag});
-        const path = try std.fmt.allocPrint(
-            \\C:\Users\{s}\AppData\Local\Warframe\EE.log
-        , .{username});
-        defer std.testing.allocator.free(path);
-        _ = try fs.openFileAbsolute(path, .{});
-    }
+fn missionObjStr() []const u8 {
+    return switch (CurrentMission.objective) {
+        .MT_CAPTURE => "capture",
+        .MT_DEFENSE => "defense",
+        .MT_EXCAVATE => "excavation",
+        .MT_EXTERMINATION => "extermination",
+        .MT_INTEL => "spy",
+        .MT_LANDSCAPE => "open world",
+        .MT_MOBILE_DEFENSE => "mobile defense",
+        .MT_RAILJACK => "Railjack",
+        .MT_TERRITORY => "interception",
+        else => "",
+    };
 }
