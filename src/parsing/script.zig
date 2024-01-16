@@ -8,22 +8,38 @@ pub fn missionInfo(log: log_types.LogEntry) ?struct { name: []const u8, kind: mi
         return null;
     }
 
-    if (!std.mem.startsWith(u8, log.message, ": Mission name:")) {
-        return null;
-    }
+    if (std.mem.startsWith(u8, log.message, ": Mission name:")) {
+        const kind_separator = std.mem.lastIndexOf(u8, log.message, " - ");
+        if (kind_separator != null) {
+            return .{
+                .name = log.message[16..kind_separator.?],
+                .kind = mission.missionKind(log.message),
+            };
+        }
 
-    const kind_separator = std.mem.lastIndexOf(u8, log.message, " - ");
-    if (kind_separator != null) {
         return .{
-            .name = log.message[16..kind_separator.?],
-            .kind = mission.missionKind(log.message),
+            .name = log.message[16..],
+            .kind = .Normal,
+        };
+    } else if (std.mem.startsWith(u8, log.message, ": Cached mission name=")) {
+        const try_idx = std.mem.lastIndexOf(u8, log.message, " (SolNode");
+        const r_idx = try_idx orelse std.mem.lastIndexOf(u8, log.message, " ()") orelse return null;
+        const message = log.message[23..r_idx];
+        const kind_separator = std.mem.lastIndexOf(u8, message, " - ");
+        if (kind_separator != null) {
+            return .{
+                .name = message[0..kind_separator.?],
+                .kind = mission.missionKind(message),
+            };
+        }
+
+        return .{
+            .name = message,
+            .kind = .Normal,
         };
     }
 
-    return .{
-        .name = log.message[16..],
-        .kind = .Normal,
-    };
+    return null;
 }
 
 pub fn missionSuccess(log: log_types.LogEntry) bool {
