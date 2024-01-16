@@ -107,6 +107,7 @@ pub const NightwaveChallenges = enum {
     SeasonWeeklyHardKillOrCaptureRainalyst,
     SeasonWeeklyHardCompleteSortie,
     SeasonWeeklyHardCompleteNightmareMissions,
+    SeasonWeeklyHardTheManyMadeWhole,
 
     UNKNOWN,
 };

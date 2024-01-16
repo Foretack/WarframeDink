@@ -150,6 +150,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyHardKillOrCaptureRainalyst => "Kill or Capture an Eidolon Hydrolyst",
         .SeasonWeeklyHardCompleteSortie => "Complete 3 sorties",
         .SeasonWeeklyHardCompleteNightmareMissions => "Complete 10 nightmare missions of any type",
+        .SeasonWeeklyHardTheManyMadeWhole => "Exchange 10 riven slivers for a riven mod",
 
         else => log.message[last_slash_idx + 1 ..],
     };
