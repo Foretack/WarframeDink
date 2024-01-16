@@ -119,7 +119,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Logged in\n", .{}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Logged in", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };

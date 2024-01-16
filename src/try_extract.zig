@@ -10,9 +10,22 @@ pub fn isObjectDumpEnd(line: []const u8) bool {
 
 pub fn objectStrField(line: []const u8) ?struct { name: []const u8, value: []const u8 } {
     const trimmed = std.mem.trim(u8, line, " ");
-    const eql = std.mem.indexOf(u8, trimmed, "=") orelse return null;
-    const name = trimmed[0..eql];
-    const val = trimmed[eql + 1 ..];
+    var name: []const u8 = undefined;
+    var val: []const u8 = undefined;
+    if (trimmed.len < 1) {
+        return null;
+    }
+
+    // JSON mode
+    if (trimmed[0] == '"') {
+        const colon = std.mem.indexOf(u8, trimmed, ":") orelse return null;
+        name = trimmed[1 .. colon - 2];
+        val = trimmed[colon + 2 ..];
+    } else {
+        const eql = std.mem.indexOf(u8, trimmed, "=") orelse return null;
+        name = trimmed[0..eql];
+        val = trimmed[eql + 1 ..];
+    }
 
     return .{ .name = name, .value = val };
 }
