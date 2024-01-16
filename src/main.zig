@@ -119,7 +119,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} logged in\n", .{user}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Logged in\n", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -142,8 +142,7 @@ fn lineAction(line: []const u8) void {
                     .EliteWeekly => "an elite weekly",
                 };
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} completed {s} Nightwave challenge!", .{
-                    user,
+                const message_str = std.fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{
                     challenge_str,
                 }) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
@@ -160,7 +159,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} logged out\n", .{user}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Logged out", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -172,8 +171,8 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                std.debug.print("{s} found a Riven Sliver!\n", .{user});
-                const message_str = std.fmt.allocPrint(allocator, "{s} found a Riven Sliver!\n", .{user}) catch |err| {
+                std.debug.print("Found a Riven Sliver!", .{user});
+                const message_str = std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -195,7 +194,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} failed a mission\n", .{user}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Failed a mission: {s}", .{CurrentMission.name}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -208,7 +207,7 @@ fn lineAction(line: []const u8) void {
                 }
 
                 std.debug.print("{s} defeated an Acolyte! ({s})\n", .{ user, acolyte });
-                const message_str = std.fmt.allocPrint(allocator, "{s} defeated an Acolyte! ({s})", .{ user, acolyte }) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{acolyte}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -221,7 +220,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} captured an Eidolon!", .{user}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Captured an Eidolon!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -233,7 +232,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} spawned a Kuva Lich!", .{user}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Spawned a Kuva Lich!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -246,7 +245,7 @@ fn lineAction(line: []const u8) void {
                 }
 
                 std.debug.print("{s} reached MR {}\n", .{ user, new_rank });
-                const message_str = std.fmt.allocPrint(allocator, "{s} reached MR {}", .{ user, new_rank }) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Reached Mastery Rank {}", .{new_rank}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -258,7 +257,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} defeated the stalker!", .{user}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Defeated the stalker!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -270,7 +269,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} defeated their Kuva Lich!", .{user}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Defeated their Kuva Lich!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -287,7 +286,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "{s} died to a {s}", .{ user, killed_by }) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Died to a {s}", .{killed_by}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -335,9 +334,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed an Eidolon hunt!\n", .{
-                user,
-            });
+            mission_str = try std.fmt.allocPrint(allocator, "Completed an Eidolon hunt!\n", .{});
         },
         .Normal => {
             if (!config.notifications.normalMission.enabled or config.notifications.normalMission.minLevel > CurrentMission.minLevel) {
@@ -346,8 +343,7 @@ fn missionEnd() !void {
 
             switch (CurrentMission.objective) {
                 .MT_DEFENSE => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed {} waves of defense in {s}! ({}-{})", .{
-                        user,
+                    mission_str = try std.fmt.allocPrint(allocator, "Completed {} waves of defense in {s}! ({}-{})", .{
                         CurrentMission.successCount,
                         CurrentMission.name,
                         CurrentMission.minLevel,
@@ -356,21 +352,16 @@ fn missionEnd() !void {
                 },
                 .MT_ENDLESS_EXTERMINATION => {
                     if (std.mem.containsAtLeast(u8, CurrentMission.name, 1, "Elite")) {
-                        mission_str = try std.fmt.allocPrint(allocator, "{s} completed {s}!", .{
-                            user,
-                            CurrentMission.name,
-                        });
+                        mission_str = try std.fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
                     } else {
-                        mission_str = try std.fmt.allocPrint(allocator, "{s} cleared {} stages of {s}!", .{
-                            user,
+                        mission_str = try std.fmt.allocPrint(allocator, "Cleared {} stages of {s}!", .{
                             CurrentMission.successCount,
                             CurrentMission.name,
                         });
                     }
                 },
                 .MT_SURVIVAL => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} survived {} minutes in {s}! ({}-{})", .{
-                        user,
+                    mission_str = try std.fmt.allocPrint(allocator, "Survived {} minutes in {s}! ({}-{})", .{
                         @divTrunc(std.time.timestamp() - CurrentMission.startedAt, 60),
                         CurrentMission.name,
                         CurrentMission.minLevel,
@@ -378,13 +369,10 @@ fn missionEnd() !void {
                     });
                 },
                 .MT_RAILJACK => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Railjack mission!\n", .{
-                        user,
-                    });
+                    mission_str = try std.fmt.allocPrint(allocator, "Completed a Railjack mission!\n", .{});
                 },
                 else => {
-                    mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission: {s}! ({}-{})", .{
-                        user,
+                    mission_str = try std.fmt.allocPrint(allocator, "Completed a mission: {s}! ({}-{})", .{
                         CurrentMission.name,
                         CurrentMission.minLevel,
                         CurrentMission.maxLevel,
@@ -401,16 +389,14 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed today's sortie!\n", .{user});
+            mission_str = try std.fmt.allocPrint(allocator, "Completed the sortie of today!", .{});
         },
         .Nightmare => {
             if (!config.notifications.nightmareMission.enabled or config.notifications.nightmareMission.minLevel > CurrentMission.minLevel) {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
-                user,
-                @tagName(CurrentMission.kind),
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Nightmare mission: {s}! ({}-{})", .{
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -421,9 +407,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
-                user,
-                @tagName(CurrentMission.kind),
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva mission: {s}! ({}-{})", .{
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -434,9 +418,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
-                user,
-                @tagName(CurrentMission.kind),
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a syndicate mission: {s}! ({}-{})", .{
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -447,8 +429,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Kuva Flood mission: {s}! ({}-{})", .{
-                user,
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva Flood mission: {s}! ({}-{})", .{
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -459,8 +440,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a Steel Path mission: {s}! ({}-{})", .{
-                user,
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Steel Path mission: {s}! ({}-{})", .{
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -471,8 +451,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a mission in Kuva Lich territory: {s}! ({}-{})", .{
-                user,
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a mission in Kuva Lich territory: {s}! ({}-{})", .{
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -483,8 +462,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed an arbitration mission: {s}! ({}-{})", .{
-                user,
+            mission_str = try std.fmt.allocPrint(allocator, "Completed an Arbitration mission: {s}! ({}-{})", .{
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -495,9 +473,17 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed a {s} mission: {s}! ({}-{})", .{
-                user,
-                @tagName(CurrentMission.kind),
+            const relic_str = switch (CurrentMission.kind) {
+                .T1Fissure => "Lith",
+                .T2Fissure => "Meso",
+                .T3Fissure => "Neo",
+                .T4Fissure => "Axi",
+                .T5Fissure => "Requiem",
+                else => "???",
+            };
+
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} fissure mission: {s}! ({}-{})", .{
+                relic_str,
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
@@ -508,9 +494,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "{s} completed the weekly ayatan hunt mission!", .{
-                user,
-            });
+            mission_str = try std.fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
         },
     }
 
