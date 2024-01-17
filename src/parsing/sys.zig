@@ -151,6 +151,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyHardCompleteSortie => "Complete 3 sorties",
         .SeasonWeeklyHardCompleteNightmareMissions => "Complete 10 nightmare missions of any type",
         .SeasonWeeklyHardTheManyMadeWhole => "Exchange 10 riven slivers for a riven mod",
+        .SeasonWeeklyHardRiseOfTheMachine => "Kill 300 enemies using a Necramech without getting destroyed",
 
         else => log.message[last_slash_idx + 1 ..],
     };

@@ -108,6 +108,7 @@ pub const NightwaveChallenges = enum {
     SeasonWeeklyHardCompleteSortie,
     SeasonWeeklyHardCompleteNightmareMissions,
     SeasonWeeklyHardTheManyMadeWhole,
+    SeasonWeeklyHardRiseOfTheMachine,
 
     UNKNOWN,
 };
