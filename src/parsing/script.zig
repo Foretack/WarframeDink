@@ -148,3 +148,11 @@ pub fn lichDefeated(log: log_types.LogEntry) bool {
 
     return true;
 }
+
+pub fn grustragDefeated(log: log_types.LogEntry) bool {
+    if (!std.mem.eql(u8, log.luaFile orelse return false, "HudRedux.lua")) {
+        return false;
+    }
+
+    return std.mem.endsWith(u8, log.message, "GrineerDeathSquad/DeathSquadDefeatedTransmission");
+}

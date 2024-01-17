@@ -31,6 +31,7 @@ pub const Config = struct {
         sanctuaryOnslaught: NotifEntry,
         syndicateMission: NotifEntry,
         lichTerritoryMission: NotifEntry,
+        grustragDefeat: NotifEntry,
     },
 
     pub fn get(allocator: std.mem.Allocator) !Config {

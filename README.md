@@ -34,11 +34,12 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 - Stalker defeated
 - Death log
 - Kuva Lich Spawn / Defeat
+- Grustrag Three defeat
 
 ## TODO
 
 - Duviri/Plains/Deimos/Fortuna
-- Zenuka/Grineer guys defeat
+- Zenuka defeat
 - Corpus lich stuff
 - Archon hunts
 - Profit taker

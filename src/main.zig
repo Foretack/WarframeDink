@@ -280,6 +280,14 @@ fn lineAction(line: []const u8) void {
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 16777215);
+            } else if (script.grustragDefeated(log)) {
+                const message_str = std.fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}) catch |err| {
+                    std.log.err("Allocation error: {}\n", .{err});
+                    return;
+                };
+                defer allocator.free(message_str);
+
+                sendDiscordMessage(message_str, null, 12158478);
             }
         },
         .Game => {

@@ -79,6 +79,9 @@
         },
         "lichTerritoryMission": {
             "enabled": true
+        },
+        "grustragDefeat": {
+            "enabled": true
         }
     }
 }
