@@ -117,10 +117,6 @@ pub fn kuvaLichSpan(log: log_types.LogEntry) bool {
 }
 
 pub fn isMasteryRankUp(log: log_types.LogEntry) ?u8 {
-    if (!std.mem.eql(u8, log.luaFile orelse return null, "WaveChallenge.lua")) {
-        return null;
-    }
-
     if (!std.mem.startsWith(u8, log.message, ": Dojo: OnTrainingResultUploaded result=true")) {
         return null;
     }

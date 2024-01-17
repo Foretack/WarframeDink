@@ -249,7 +249,7 @@ fn lineAction(line: []const u8) void {
                 }
 
                 std.debug.print("{s} reached MR {}\n", .{ user, new_rank });
-                const message_str = std.fmt.allocPrint(allocator, "Reached Mastery Rank {}", .{new_rank}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{new_rank}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
