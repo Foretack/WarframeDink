@@ -288,6 +288,18 @@ fn lineAction(line: []const u8) void {
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 12158478);
+            } else if (script.profitTakerDefeated(log)) {
+                if (!config.notifications.profitTakerKill.enabled) {
+                    return;
+                }
+
+                const message_str = std.fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}) catch |err| {
+                    std.log.err("Allocation error: {}\n", .{err});
+                    return;
+                };
+                defer allocator.free(message_str);
+
+                sendDiscordMessage(message_str, null, 12158478);
             }
         },
         .Game => {

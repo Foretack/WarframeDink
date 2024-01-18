@@ -82,6 +82,9 @@
         },
         "grustragDefeat": {
             "enabled": true
+        },
+        "profitTakerKill": {
+            "enabled": true
         }
     }
 }

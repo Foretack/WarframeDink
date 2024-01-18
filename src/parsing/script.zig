@@ -67,7 +67,7 @@ pub fn missionFailure(log: log_types.LogEntry) bool {
 }
 
 pub fn acolyteDefeated(log: log_types.LogEntry) ?[]const u8 {
-    if (!std.mem.eql(u8, log.luaFile orelse "", "Transmission.lua")) {
+    if (!std.mem.eql(u8, log.luaFile orelse return null, "Transmission.lua")) {
         return null;
     }
 
@@ -85,7 +85,7 @@ pub fn acolyteDefeated(log: log_types.LogEntry) ?[]const u8 {
 }
 
 pub fn stalkerDefeated(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse "", "Transmission.lua")) {
+    if (!std.mem.eql(u8, log.luaFile orelse return false, "Transmission.lua")) {
         return false;
     }
 
@@ -151,4 +151,12 @@ pub fn grustragDefeated(log: log_types.LogEntry) bool {
     }
 
     return std.mem.endsWith(u8, log.message, "GrineerDeathSquad/DeathSquadDefeatedTransmission");
+}
+
+pub fn profitTakerDefeated(log: log_types.LogEntry) bool {
+    if (!std.mem.eql(u8, log.luaFile orelse return false, "Transmission.lua")) {
+        return false;
+    }
+
+    return std.mem.endsWith(u8, log.message, "Eudico/DBntyFourSatelReal0601Eudico");
 }
