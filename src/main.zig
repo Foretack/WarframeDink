@@ -236,7 +236,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Spawned a Kuva Lich!", .{}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Spawned a Lich!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -273,7 +273,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Defeated their Kuva Lich!", .{}) catch |err| {
+                const message_str = std.fmt.allocPrint(allocator, "Defeated their Lich!", .{}) catch |err| {
                     std.log.err("Allocation error: {}\n", .{err});
                     return;
                 };
@@ -457,7 +457,7 @@ fn missionEnd() !void {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva Lich territory {s} mission: {s}! ({}-{})", .{
+            mission_str = try std.fmt.allocPrint(allocator, "Completed a Lich territory {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
