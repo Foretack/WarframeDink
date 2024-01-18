@@ -78,14 +78,18 @@ fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
     var crlf_idx: ?usize = std.mem.indexOf(u8, buffer, "\r\n");
     while (crlf_idx) |line_end_idx| : (crlf_idx = std.mem.indexOf(u8, buffer[line_start_idx .. stopAt orelse buffer.len], "\r\n")) {
         const indexed_end = line_end_idx + line_start_idx;
-        lineAction(buffer[line_start_idx..indexed_end]);
+        lineAction(buffer[line_start_idx..indexed_end]) catch |alloc_err| {
+            std.log.err("Allocation error: {}\n", .{alloc_err});
+            return;
+        };
+
         line_start_idx = indexed_end + 2;
     }
 }
 
 var readingObject: bool = false;
 
-fn lineAction(line: []const u8) void {
+fn lineAction(line: []const u8) !void {
     if (readingObject) {
         if (try_extract.isObjectDumpEnd(line)) {
             readingObject = false;
@@ -123,18 +127,12 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Logged in", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Logged in", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 1155897);
             } else if (sys.missionEnd(log)) {
-                missionEnd() catch |alloc_err| {
-                    std.log.err("Allocation error: {}\n", .{alloc_err});
-                    return;
-                };
+                try missionEnd();
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
                 if (!config.notifications.nightwaveChallengeComplete.enabled) {
                     return;
@@ -146,12 +144,7 @@ fn lineAction(line: []const u8) void {
                     .EliteWeekly => "an elite weekly",
                 };
 
-                const message_str = std.fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{
-                    challenge_str,
-                }) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challenge_str});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, nw_challenge.name, 16449791);
@@ -163,10 +156,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Logged out", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Logged out", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 13699683);
@@ -176,10 +166,7 @@ fn lineAction(line: []const u8) void {
                 }
 
                 std.debug.print("Found a Riven Sliver!\n", .{});
-                const message_str = std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 9442302);
@@ -198,10 +185,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Failed a mission: {s}", .{CurrentMission.name}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Failed a mission: {s}", .{CurrentMission.name});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, CurrentMission.name, 15036416);
@@ -211,10 +195,7 @@ fn lineAction(line: []const u8) void {
                 }
 
                 std.debug.print("{s} defeated an Acolyte! ({s})\n", .{ user, acolyte });
-                const message_str = std.fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{acolyte}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{acolyte});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 1);
@@ -224,10 +205,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Captured an Eidolon!", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Captured an Eidolon!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 65535);
@@ -236,10 +214,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Spawned a Lich!", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Spawned a Lich!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 5776672);
@@ -249,10 +224,7 @@ fn lineAction(line: []const u8) void {
                 }
 
                 std.debug.print("{s} reached MR {}\n", .{ user, new_rank });
-                const message_str = std.fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{new_rank}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{new_rank});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 30940);
@@ -261,10 +233,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Defeated the stalker!", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Defeated the stalker!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 1);
@@ -273,18 +242,12 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Defeated their Lich!", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Defeated their Lich!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 16777215);
             } else if (script.grustragDefeated(log)) {
-                const message_str = std.fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 12158478);
@@ -293,10 +256,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Killed the Profit Taker!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 12158478);
@@ -310,10 +270,7 @@ fn lineAction(line: []const u8) void {
                     return;
                 }
 
-                const message_str = std.fmt.allocPrint(allocator, "Died to a {s}", .{killed_by}) catch |err| {
-                    std.log.err("Allocation error: {}\n", .{err});
-                    return;
-                };
+                const message_str = try std.fmt.allocPrint(allocator, "Died to a {s}", .{killed_by});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 16725760);
