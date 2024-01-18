@@ -529,6 +529,7 @@ fn missionObjStr() []const u8 {
         .MT_MOBILE_DEFENSE => "mobile defense",
         .MT_RAILJACK => "Railjack",
         .MT_TERRITORY => "interception",
+        .MT_ARTIFACT => "disruption",
         else => "",
     };
 }
