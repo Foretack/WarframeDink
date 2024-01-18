@@ -91,7 +91,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonDailyBulletJump => "Bullet jump 150 times",
         .SeasonDailyAimGlide => "Kill 20 enemies while aim gliding",
 
-        .SeasonWeeklyLoyalty => "Interact with your Kubrow or Kavat",
+        .SeasonWeeklyLoyalty => "Gain a total of 5000 Standing across all Syndicate factions",
         .SeasonWeeklyCompleteSpy => "Complete 3 spy missions",
         .SeasonWeeklyRailjackHijackDestroyThree => "While piloting a hijacked crewship, destroy 3 enemy fighters",
         .SeasonWeeklyVenusBounties => "Complete 5 different Bounties in Orb Vallis",
