@@ -104,7 +104,7 @@ pub fn eidolonCaptured(log: log_types.LogEntry) bool {
     return true;
 }
 
-pub fn kuvaLichSpan(log: log_types.LogEntry) bool {
+pub fn kuvaLichSpawn(log: log_types.LogEntry) bool {
     if (!std.mem.eql(u8, log.luaFile orelse return false, "KuvaLichFinisher.lua")) {
         return false;
     }

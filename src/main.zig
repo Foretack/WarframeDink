@@ -38,7 +38,7 @@ pub fn main() !void {
         defer file.close();
         const stat = try file.stat();
         if (stat.mtime < checkMtime) {
-            std.debug.print("File has not changed since user logout. Waiting for change...\n", .{});
+            std.log.info("File has not changed since user logout. Waiting for change...\n", .{});
             std.time.sleep(30_000_000_000);
             continue;
         }
@@ -47,7 +47,7 @@ pub fn main() !void {
         var buf: [8192]u8 = undefined;
         while (true) {
             if (loggedOut and stat.mtime < checkMtime) {
-                std.debug.print("User logged out. Closing file...\n", .{});
+                std.log.info("User logged out. Closing file...\n", .{});
                 break;
             }
 
@@ -122,7 +122,7 @@ fn lineAction(line: []const u8) !void {
                 }
 
                 loggedOut = false;
-                std.debug.print("{s} logged in\n", .{user});
+                std.log.info("{s} logged in\n", .{user});
                 if (!config.notifications.login.enabled) {
                     return;
                 }
@@ -132,8 +132,10 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, null, 1155897);
             } else if (sys.missionEnd(log)) {
+                std.log.info("mission ended\n", .{});
                 try missionEnd();
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
+                std.log.info("nightwave challenge complete: {s}\n", .{nw_challenge.name});
                 if (!config.notifications.nightwaveChallengeComplete.enabled) {
                     return;
                 }
@@ -149,7 +151,7 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, nw_challenge.name, 16449791);
             } else if (sys.exitingGame(log)) {
-                std.debug.print("{s} logged out\n", .{user});
+                std.log.info("{s} logged out\n", .{user});
                 loggedOut = true;
                 checkMtime = std.time.nanoTimestamp() + 10_000_000_000;
                 if (!config.notifications.logout.enabled) {
@@ -161,11 +163,11 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, null, 13699683);
             } else if (sys.rivenSliverPickup(log)) {
+                std.log.info("Riven Sliver pickup\n", .{});
                 if (!config.notifications.rivenSliverPickup.enabled) {
                     return;
                 }
 
-                std.debug.print("Found a Riven Sliver!\n", .{});
                 const message_str = try std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{});
                 defer allocator.free(message_str);
 
@@ -178,9 +180,12 @@ fn lineAction(line: []const u8) !void {
                 CurrentMission.name = allocator.dupe(u8, mission_info.name) catch unreachable;
                 CurrentMission.startedAt = std.time.timestamp();
                 CurrentMission.kind = mission_info.kind;
+                std.log.debug("new mission set: {s}\n", .{CurrentMission.name});
             } else if (script.missionSuccess(log)) {
                 CurrentMission.successCount += 1;
+                std.log.debug("(success count increase)\n", .{});
             } else if (script.missionFailure(log)) {
+                std.log.info("mission failed: {s}\n", .{CurrentMission.name});
                 if (!config.notifications.missionFailed.enabled) {
                     return;
                 }
@@ -190,17 +195,18 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, CurrentMission.name, 15036416);
             } else if (script.acolyteDefeated(log)) |acolyte| {
+                std.log.info("acolyte defeated: {s}\n", .{acolyte});
                 if (!config.notifications.acolyteDefeat.enabled) {
                     return;
                 }
 
-                std.debug.print("{s} defeated an Acolyte! ({s})\n", .{ user, acolyte });
                 const message_str = try std.fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{acolyte});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 1);
             } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
+                std.log.info("eidolon captured\n", .{});
                 if (!config.notifications.eidolonCaptured.enabled) {
                     return;
                 }
@@ -209,7 +215,8 @@ fn lineAction(line: []const u8) !void {
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 65535);
-            } else if (script.kuvaLichSpan(log)) {
+            } else if (script.kuvaLichSpawn(log)) {
+                std.log.info("lich spawned\n", .{});
                 if (!config.notifications.lichSpawn.enabled) {
                     return;
                 }
@@ -219,16 +226,17 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, null, 5776672);
             } else if (script.isMasteryRankUp(log)) |new_rank| {
+                std.log.info("Mastery Rank {} reached\n", .{new_rank});
                 if (!config.notifications.masteryRankUp.enabled) {
                     return;
                 }
 
-                std.debug.print("{s} reached MR {}\n", .{ user, new_rank });
                 const message_str = try std.fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{new_rank});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 30940);
             } else if (script.stalkerDefeated(log)) {
+                std.log.info("stalker defeated\n", .{});
                 if (!config.notifications.stalkerDefeat.enabled) {
                     return;
                 }
@@ -238,6 +246,7 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, null, 1);
             } else if (script.lichDefeated(log)) {
+                std.log.info("lich defeated\n", .{});
                 if (!config.notifications.lichDefeat.enabled) {
                     return;
                 }
@@ -247,11 +256,17 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, null, 16777215);
             } else if (script.grustragDefeated(log)) {
+                std.log.info("grustrag three defeated\n", .{});
+                if (!config.notifications.grustragDefeat.enabled) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{});
                 defer allocator.free(message_str);
 
                 sendDiscordMessage(message_str, null, 12158478);
             } else if (script.profitTakerDefeated(log)) {
+                std.log.info("profit taker killed\n", .{});
                 if (!config.notifications.profitTakerKill.enabled) {
                     return;
                 }
@@ -264,8 +279,9 @@ fn lineAction(line: []const u8) !void {
         },
         .Game => {
             if (game.hostMigration(log)) {
-                std.debug.print("{s} is suffering host migration\n", .{user});
+                std.log.debug("suffering host migration...\n", .{});
             } else if (game.userDeath(log, user)) |killed_by| {
+                std.log.info("dead to a {s}\n", .{killed_by});
                 if (!config.notifications.death.enabled) {
                     return;
                 }
