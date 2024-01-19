@@ -114,7 +114,7 @@ fn lineAction(line: []const u8) !void {
                         const message_str = try std.fmt.allocPrint(allocator, "Unvieled a {s} Riven!", .{obj_field.value[category..category_end]});
                         defer allocator.free(message_str);
 
-                        sendDiscordMessage(message_str, null, 9442302);
+                        sendDiscordMessage(message_str, null, 9442302, false);
                     }
 
                     return;
@@ -143,13 +143,17 @@ fn lineAction(line: []const u8) !void {
                 const message_str = try std.fmt.allocPrint(allocator, "Logged in", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 1155897);
+                sendDiscordMessage(message_str, null, 1155897, false);
             } else if (sys.missionEnd(log)) {
                 std.log.info("mission ended\n", .{});
                 try missionEnd();
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
                 std.log.info("nightwave challenge complete: {s}\n", .{nw_challenge.name});
                 if (!config.notifications.nightwaveChallengeComplete.enabled) {
+                    return;
+                }
+
+                if (config.notifications.nightwaveChallengeComplete.minLevel > CurrentMission.minLevel) {
                     return;
                 }
 
@@ -162,7 +166,7 @@ fn lineAction(line: []const u8) !void {
                 const message_str = try std.fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challenge_str});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, nw_challenge.name, 16449791);
+                sendDiscordMessage(message_str, nw_challenge.name, 16449791, false);
             } else if (sys.exitingGame(log)) {
                 std.log.info("{s} logged out\n", .{user});
                 loggedOut = true;
@@ -174,17 +178,21 @@ fn lineAction(line: []const u8) !void {
                 const message_str = try std.fmt.allocPrint(allocator, "Logged out", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 13699683);
+                sendDiscordMessage(message_str, null, 13699683, false);
             } else if (sys.rivenSliverPickup(log)) {
                 std.log.info("Riven Sliver pickup\n", .{});
                 if (!config.notifications.rivenSliverPickup.enabled) {
                     return;
                 }
 
+                if (config.notifications.rivenSliverPickup.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 9442302);
+                sendDiscordMessage(message_str, null, 9442302, false);
             }
         },
         .Script => {
@@ -203,20 +211,28 @@ fn lineAction(line: []const u8) !void {
                     return;
                 }
 
+                if (config.notifications.missionFailed.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Failed a mission: {s}", .{CurrentMission.name});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, CurrentMission.name, 15036416);
+                sendDiscordMessage(message_str, CurrentMission.name, 15036416, false);
             } else if (script.acolyteDefeated(log)) |acolyte| {
                 std.log.info("acolyte defeated: {s}\n", .{acolyte});
                 if (!config.notifications.acolyteDefeat.enabled) {
                     return;
                 }
 
+                if (config.notifications.acolyteDefeat.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{acolyte});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 1);
+                sendDiscordMessage(message_str, null, 1, config.notifications.acolyteDefeat.showTime);
             } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
                 std.log.info("eidolon captured\n", .{});
@@ -224,20 +240,28 @@ fn lineAction(line: []const u8) !void {
                     return;
                 }
 
+                if (config.notifications.eidolonCaptured.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Captured an Eidolon!", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 65535);
+                sendDiscordMessage(message_str, null, 65535, false);
             } else if (script.kuvaLichSpawn(log)) {
                 std.log.info("lich spawned\n", .{});
                 if (!config.notifications.lichSpawn.enabled) {
                     return;
                 }
 
+                if (config.notifications.lichSpawn.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Spawned a Lich!", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 5776672);
+                sendDiscordMessage(message_str, null, 5776672, false);
             } else if (script.isMasteryRankUp(log)) |new_rank| {
                 std.log.info("Mastery Rank {} reached\n", .{new_rank});
                 if (!config.notifications.masteryRankUp.enabled) {
@@ -247,47 +271,63 @@ fn lineAction(line: []const u8) !void {
                 const message_str = try std.fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{new_rank});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 30940);
+                sendDiscordMessage(message_str, null, 30940, config.notifications.masteryRankUp.showTime);
             } else if (script.stalkerDefeated(log)) {
                 std.log.info("stalker defeated\n", .{});
                 if (!config.notifications.stalkerDefeat.enabled) {
                     return;
                 }
 
+                if (config.notifications.stalkerDefeat.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Defeated the stalker!", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 1);
+                sendDiscordMessage(message_str, null, 1, false);
             } else if (script.lichDefeated(log)) {
                 std.log.info("lich defeated\n", .{});
                 if (!config.notifications.lichDefeat.enabled) {
                     return;
                 }
 
+                if (config.notifications.lichDefeat.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Defeated their Lich!", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 16777215);
+                sendDiscordMessage(message_str, null, 16777215, config.notifications.lichDefeat.showTime);
             } else if (script.grustragDefeated(log)) {
                 std.log.info("grustrag three defeated\n", .{});
                 if (!config.notifications.grustragDefeat.enabled) {
                     return;
                 }
 
+                if (config.notifications.grustragDefeat.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 12158478);
+                sendDiscordMessage(message_str, null, 12158478, false);
             } else if (script.profitTakerDefeated(log)) {
                 std.log.info("profit taker killed\n", .{});
                 if (!config.notifications.profitTakerKill.enabled) {
                     return;
                 }
 
+                if (config.notifications.profitTakerKill.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Killed the Profit Taker!", .{});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 12158478);
+                sendDiscordMessage(message_str, null, 12158478, config.notifications.profitTakerKill.showTime);
             }
         },
         .Game => {
@@ -299,10 +339,14 @@ fn lineAction(line: []const u8) !void {
                     return;
                 }
 
+                if (config.notifications.death.minLevel > CurrentMission.minLevel) {
+                    return;
+                }
+
                 const message_str = try std.fmt.allocPrint(allocator, "Died to a {s}", .{killed_by});
                 defer allocator.free(message_str);
 
-                sendDiscordMessage(message_str, null, 16725760);
+                sendDiscordMessage(message_str, null, 16725760, config.notifications.death.showTime);
             }
         },
         else => {},
@@ -332,19 +376,25 @@ pub fn secSinceStart() i64 {
 }
 
 fn missionEnd() !void {
+    if (std.time.timestamp() - CurrentMission.startedAt < 30) {
+        return;
+    }
+
     var mission_str: []const u8 = "NOTSET";
     defer {
         if (!std.mem.eql(u8, mission_str, "NOTSET")) allocator.free(mission_str);
     }
     var desc: ?[]const u8 = null;
     var color: i32 = 65400;
+    var includeTime = false;
     switch (CurrentMission.kind) {
         .EidolonHunt => {
             if (!config.notifications.eidolonHunt.enabled) {
                 return;
             }
 
-            mission_str = try std.fmt.allocPrint(allocator, "Completed an Eidolon hunt!\n", .{});
+            includeTime = config.notifications.eidolonHunt.showTime;
+            mission_str = try std.fmt.allocPrint(allocator, "Completed an Eidolon hunt!", .{});
         },
         .Normal => {
             if (CurrentMission.objective == .MT_ENDLESS_EXTERMINATION) {
@@ -352,6 +402,7 @@ fn missionEnd() !void {
                     return;
                 }
 
+                includeTime = config.notifications.sanctuaryOnslaught.showTime;
                 mission_str = try std.fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
             } else if (CurrentMission.objective == .MT_RAILJACK) {
                 mission_str = try std.fmt.allocPrint(allocator, "Completed a Railjack mission!", .{});
@@ -360,6 +411,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.normalMission.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -383,6 +435,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.nightmareMission.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a Nightmare {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -395,6 +448,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.kuvaSiphon.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -407,6 +461,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.syndicateMission.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a syndicate {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -419,6 +474,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.kuvaFlood.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva Flood {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -431,6 +487,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.steelPathMission.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a Steel Path {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -443,6 +500,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.lichTerritoryMission.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a Lich territory {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -455,6 +513,7 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.arbitration.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed an Arbitration {s} mission: {s}! ({}-{})", .{
                 missionObjStr(),
                 CurrentMission.name,
@@ -476,6 +535,7 @@ fn missionEnd() !void {
                 else => "???",
             };
 
+            includeTime = config.notifications.voidFissure.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} fissure {s} mission: {s}! ({}-{})", .{
                 relic_str,
                 missionObjStr(),
@@ -489,23 +549,34 @@ fn missionEnd() !void {
                 return;
             }
 
+            includeTime = config.notifications.weeklyAyatanMission.showTime;
             mission_str = try std.fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
         },
     }
 
     CurrentMission.successCount = 0;
-    sendDiscordMessage(mission_str, desc, color);
+    sendDiscordMessage(mission_str, desc, color, includeTime);
 }
 
-fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32) void {
+fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, includeTime: bool) void {
     if (secSinceStart() < 3) {
         return;
+    }
+
+    var footer: ?discord.Footer = null;
+    if (includeTime) {
+        const time_str: ?[]const u8 = timeStr() catch null;
+        if (time_str) |time| {
+            footer = discord.Footer{ .text = time };
+            defer allocator.free(time);
+        }
     }
 
     const embed = discord.Embed{
         .title = title,
         .description = description,
         .color = color,
+        .footer = footer,
     };
 
     const embed_arr: []discord.Embed = allocator.alloc(discord.Embed, 1) catch |err| {
@@ -545,4 +616,21 @@ fn missionObjStr() []const u8 {
         .MT_ARTIFACT => "disruption",
         else => "",
     };
+}
+
+fn timeStr() ![]const u8 {
+    const sec_diff: u64 = @intCast(std.time.timestamp() - CurrentMission.startedAt);
+    const hours = @divFloor(sec_diff, 3600);
+    var secs_remaining = @mod(sec_diff, 3600);
+    const minutes = @divFloor(secs_remaining, 60);
+    secs_remaining = @mod(secs_remaining, 60);
+    if (hours > 0) {
+        return std.fmt.allocPrint(allocator, "[{d:0>2}:{d:0>2}:{d:0>2}]", .{ hours, minutes, secs_remaining });
+    }
+
+    if (minutes > 0) {
+        return std.fmt.allocPrint(allocator, "[{d:0>2}:{d:0>2}]", .{ minutes, secs_remaining });
+    }
+
+    return std.fmt.allocPrint(allocator, "[{d:0>2}s]", .{secs_remaining});
 }

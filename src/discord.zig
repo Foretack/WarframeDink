@@ -38,4 +38,9 @@ pub const Embed = struct {
     title: []const u8,
     description: ?[]const u8 = null,
     color: i32,
+    footer: ?Footer = null,
+};
+
+pub const Footer = struct {
+    text: []const u8,
 };

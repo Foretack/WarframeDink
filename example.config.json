@@ -25,10 +25,12 @@
             "enabled": true
         },
         "lichDefeat": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         },
         "eidolonCaptured": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         },
         "dailySortie": {
             "enabled": true
@@ -44,10 +46,11 @@
         },
         "normalMission": {
             "enabled": true,
-            "minLevel": 100
+            "minLevel": 40
         },
         "steelPathMission": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         },
         "nightmareMission": {
             "enabled": true
@@ -59,32 +62,39 @@
             "enabled": true
         },
         "weeklyAyatanMission": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         },
         "eidolonHunt": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         },
         "voidFissure": {
             "enabled": true,
             "minLevel": 35
         },
         "arbitration": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         },
         "sanctuaryOnslaught": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         },
         "syndicateMission": {
             "enabled": true
         },
         "lichTerritoryMission": {
-            "enabled": true
+            "enabled": true,
+            "minLevel": 90,
+            "showTime": true
         },
         "grustragDefeat": {
             "enabled": true
         },
         "profitTakerKill": {
-            "enabled": true
+            "enabled": true,
+            "showTime": true
         }
     }
 }
