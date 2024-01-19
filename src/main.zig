@@ -111,6 +111,10 @@ fn lineAction(line: []const u8) !void {
                         const category = (std.mem.indexOf(u8, obj_field.value[wep_idx..], "/") orelse return) + wep_idx + 1;
                         const category_end = (std.mem.indexOf(u8, obj_field.value[category..], "/") orelse return) + category;
                         std.log.info("unveiled riven for: {s}\n", .{obj_field.value[category..category_end]});
+                        const message_str = try std.fmt.allocPrint(allocator, "Unvieled a {s} Riven!", .{obj_field.value[category..category_end]});
+                        defer allocator.free(message_str);
+
+                        sendDiscordMessage(message_str, null, 9442302);
                     }
 
                     return;
