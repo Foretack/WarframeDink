@@ -36,6 +36,7 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 - Kuva/Coprus Lich Spawn/Defeat
 - Grustrag Three defeat
 - Profit Taker kill
+- Riven unveiled (!)
 
 ## TODO
 

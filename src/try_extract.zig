@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn isObjectDumpStart(line: []const u8) bool {
-    return line.len > 0 and line[0] != ' ' and (std.mem.endsWith(u8, line, "={") or line[0] == '{');
+    return line.len > 0 and line[0] != ' ' and (line[line.len - 1] == '{' or line[0] == '{');
 }
 
 pub fn isObjectDumpEnd(line: []const u8) bool {

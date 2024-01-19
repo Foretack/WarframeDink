@@ -1,6 +1,5 @@
 const std = @import("std");
 const fs = std.fs;
-const builtin = @import("builtin");
 const log_types = @import("log_types.zig");
 const try_extract = @import("try_extract.zig");
 const mission_types = @import("current_mission.zig");
@@ -15,6 +14,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
 var config: cfg.Config = undefined;
 var startTime: i64 = undefined;
+var cfgUser: ?[]const u8 = null;
 var user: []const u8 = undefined;
 var loggedOut = false;
 var checkMtime: i128 = 0;
@@ -26,7 +26,7 @@ pub fn main() !void {
         return;
     };
 
-    user = config.username orelse undefined;
+    cfgUser = config.username;
     while (true) {
         startTime = std.time.timestamp();
         const file = fs.openFileAbsolute(config.warframeLogFile, .{}) catch |err| {
@@ -104,10 +104,20 @@ fn lineAction(line: []const u8) !void {
             } else if (try_extract.objectStrField(line)) |obj_field| {
                 if (std.mem.eql(u8, obj_field.name, "missionType")) {
                     CurrentMission.objective = std.meta.stringToEnum(mission_types.Objective, obj_field.value) orelse .UNKNOWN;
+                } else if (std.mem.startsWith(u8, obj_field.name, "UpgradeFinger")) {
+                    const compat_idx = std.mem.indexOf(u8, obj_field.value, "\\\"compat\\\":\\\"/Lotus/Weapons/");
+                    if (compat_idx) |i| {
+                        const wep_idx = i + 28;
+                        const category = (std.mem.indexOf(u8, obj_field.value[wep_idx..], "/") orelse return) + wep_idx + 1;
+                        const category_end = (std.mem.indexOf(u8, obj_field.value[category..], "/") orelse return) + category;
+                        std.log.info("unveiled riven for: {s}\n", .{obj_field.value[category..category_end]});
+                    }
+
+                    return;
                 }
             }
         } else readingObject = false;
-    } else if (!lineIsSeq(line) and try_extract.isObjectDumpStart(line)) {
+    } else if (try_extract.isObjectDumpStart(line)) {
         readingObject = true;
         return;
     }
@@ -117,9 +127,8 @@ fn lineAction(line: []const u8) !void {
     switch (log.category) {
         .Sys => {
             if (sys.loginUsername(log)) |username| {
-                if (config.username == null) {
-                    user = allocator.dupe(u8, username) catch unreachable;
-                }
+                // yes this is a leak, but no one will log out & in enough for this to be significant
+                user = allocator.dupe(u8, username) catch unreachable;
 
                 loggedOut = false;
                 std.log.info("{s} logged in\n", .{user});
@@ -504,7 +513,7 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32) v
     embed_arr[0] = embed;
     const message = discord.Message{
         .avatar_url = config.profilePictureUrl,
-        .username = user,
+        .username = cfgUser orelse user,
         .embeds = embed_arr,
     };
 
