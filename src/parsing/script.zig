@@ -138,7 +138,7 @@ pub fn lichDefeated(log: log_types.LogEntry) bool {
         return false;
     }
 
-    if (!std.mem.eql(u8, log.message, ": Lich killed, unlocking door")) {
+    if (!std.mem.eql(u8, log.message, ": Active liches loop done")) {
         return false;
     }
 
