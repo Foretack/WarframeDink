@@ -145,7 +145,7 @@ fn lineAction(line: []const u8) !void {
 
                 sendDiscordMessage(message_str, null, 1155897, false);
             } else if (sys.missionEnd(log)) {
-                std.log.info("mission ended\n", .{});
+                std.log.info("mission ended ({s}, {s})\n", .{@tagName(CurrentMission.kind), @tagName(CurrentMission.objective)});
                 try missionEnd();
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
                 std.log.info("nightwave challenge complete: {s}\n", .{nw_challenge.name});
@@ -564,11 +564,13 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, i
     }
 
     var footer: ?discord.Footer = null;
+    defer {
+        if (footer != null) allocator.free(footer.?.text);
+    }
     if (includeTime) {
         const time_str: ?[]const u8 = timeStr() catch null;
         if (time_str) |time| {
             footer = discord.Footer{ .text = time };
-            defer allocator.free(time);
         }
     }
 
