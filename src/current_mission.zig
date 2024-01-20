@@ -1,4 +1,7 @@
 const std = @import("std");
+const ss = @import("utils/string_switch.zig");
+const stringSwitch = ss.stringSwitch;
+const case = ss.case;
 
 pub const Mission = struct {
     pub var name: []const u8 = undefined;
@@ -53,38 +56,28 @@ const SuccessConds = union {
     stagesCleared: u16,
 };
 
-pub fn missionKind(logMessage: []const u8) MissionKind {
-    if (std.mem.endsWith(u8, logMessage, "THE STEEL PATH")) {
-        return .SteelPath;
-    } else if (std.mem.endsWith(u8, logMessage, "Kuva Siphon")) {
-        return .Kuva;
-    } else if (std.mem.endsWith(u8, logMessage, "Kuva Flood")) {
-        return .KuvaFlood;
-    } else if (std.mem.endsWith(u8, logMessage, "SORTIE")) {
-        return .Sortie;
-    } else if (std.mem.endsWith(u8, logMessage, "EIDOLON CULL")) {
-        return .EidolonHunt;
-    } else if (std.mem.endsWith(u8, logMessage, "Nightmare")) {
-        return .Nightmare;
-    } else if (std.mem.endsWith(u8, logMessage, "Arbitration")) {
-        return .Arbitration;
-    } else if (std.mem.endsWith(u8, logMessage, "T1 FISSURE")) {
-        return .T1Fissure;
-    } else if (std.mem.endsWith(u8, logMessage, "T2 FISSURE")) {
-        return .T2Fissure;
-    } else if (std.mem.endsWith(u8, logMessage, "T3 FISSURE")) {
-        return .T3Fissure;
-    } else if (std.mem.endsWith(u8, logMessage, "T4 FISSURE")) {
-        return .T4Fissure;
-    } else if (std.mem.endsWith(u8, logMessage, "T5 FISSURE")) {
-        return .T5Fissure;
-    } else if (std.mem.endsWith(u8, logMessage, "SYNDICATE")) {
-        return .Syndicate;
-    } else if (std.mem.endsWith(u8, logMessage, "Controlled Territory")) {
-        return .ControlledTerritory;
-    } else if (std.mem.indexOf(u8, logMessage, "Weekly Ayatan") != null) {
+pub fn missionKind(logMessage: []const u8, separator: usize) MissionKind {
+    if (std.mem.indexOf(u8, logMessage, "Weekly Ayatan") != null) {
         return .TreasureHunt;
+    } else if (logMessage.len <= separator + 4) {
+        return .Normal;
     }
 
-    return .Normal;
+    return switch (stringSwitch(logMessage[(separator + 3)..])) {
+        case("THE STEEL PATH") => .SteelPath,
+        case("Kuva Siphon") => .Kuva,
+        case("Kuva Flood") => .KuvaFlood,
+        case("SORTIE") => .Sortie,
+        case("EIDOLON CULL") => .EidolonHunt,
+        case("Nightmare") => .Nightmare,
+        case("Arbitration") => .Arbitration,
+        case("T1 FISSURE") => .T1Fissure,
+        case("T2 FISSURE") => .T2Fissure,
+        case("T3 FISSURE") => .T3Fissure,
+        case("T4 FISSURE") => .T4Fissure,
+        case("T5 FISSURE") => .T5Fissure,
+        case("SYNDICATE") => .Syndicate,
+        case("Controlled Territory") => .ControlledTerritory,
+        else => .Normal,
+    };
 }

@@ -13,7 +13,7 @@ pub fn missionInfo(log: log_types.LogEntry) ?struct { name: []const u8, kind: mi
         if (kind_separator != null) {
             return .{
                 .name = log.message[16..kind_separator.?],
-                .kind = mission.missionKind(log.message),
+                .kind = mission.missionKind(log.message, kind_separator.?),
             };
         }
 
@@ -29,7 +29,7 @@ pub fn missionInfo(log: log_types.LogEntry) ?struct { name: []const u8, kind: mi
         if (kind_separator != null) {
             return .{
                 .name = message[0..kind_separator.?],
-                .kind = mission.missionKind(message),
+                .kind = mission.missionKind(message, kind_separator.?),
             };
         }
 

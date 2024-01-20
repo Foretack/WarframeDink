@@ -44,3 +44,19 @@ pub const Embed = struct {
 pub const Footer = struct {
     text: []const u8,
 };
+
+pub const EmbedColors = enum(i32) {
+    lightGreen = 65400,
+    darkGreen = 1155897,
+    pink = 16449791,
+    magenta = 13699683,
+    orange = 15036416,
+    cyan = 65535,
+    darkRed = 5776672,
+    black = 1,
+    white = 16777215,
+    brown = 12158478,
+    red = 16725760,
+    purple = 9442302,
+    blue = 30940,
+};

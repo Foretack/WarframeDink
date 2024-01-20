@@ -24,6 +24,7 @@ pub fn exitingGame(log: log_types.LogEntry) bool {
     return std.mem.eql(u8, log.message, ": Main Shutdown Initiated.");
 }
 
+// TODO: Make this trigger for more rare items
 pub fn rivenSliverPickup(log: log_types.LogEntry) bool {
     if (!std.mem.startsWith(u8, log.message, ": Resource load completed")) {
         return false;

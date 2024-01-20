@@ -1,14 +1,20 @@
 const std = @import("std");
-const fs = std.fs;
-const log_types = @import("log_types.zig");
-const try_extract = @import("try_extract.zig");
-const mission_types = @import("current_mission.zig");
-const CurrentMission = mission_types.Mission;
-const sys = @import("parsing/sys.zig");
-const script = @import("parsing/script.zig");
-const game = @import("parsing/game.zig");
-const discord = @import("discord.zig");
+const lt = @import("log_types.zig");
+const gt = @import("game_types.zig");
+const mt = @import("current_mission.zig");
 const cfg = @import("config.zig");
+const sys = @import("parsing/sys.zig");
+const game = @import("parsing/game.zig");
+const script = @import("parsing/script.zig");
+const discord = @import("utils/discord.zig");
+const try_extract = @import("parsing/try_extract.zig");
+const fs = std.fs;
+const fmt = std.fmt;
+const mem = std.mem;
+const NightwaveChallenge = gt.NightwaveChallenge;
+const parseLog = lt.parseLog;
+const CurrentMission = mt.Mission;
+const Objective = mt.Objective;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
@@ -75,8 +81,8 @@ pub fn main() !void {
 
 fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
     var line_start_idx: usize = 0;
-    var crlf_idx: ?usize = std.mem.indexOf(u8, buffer, "\r\n");
-    while (crlf_idx) |line_end_idx| : (crlf_idx = std.mem.indexOf(u8, buffer[line_start_idx .. stopAt orelse buffer.len], "\r\n")) {
+    var crlf_idx: ?usize = mem.indexOf(u8, buffer, "\r\n");
+    while (crlf_idx) |line_end_idx| : (crlf_idx = mem.indexOf(u8, buffer[line_start_idx .. stopAt orelse buffer.len], "\r\n")) {
         const indexed_end = line_end_idx + line_start_idx;
         lineAction(buffer[line_start_idx..indexed_end]) catch |alloc_err| {
             std.log.err("Allocation error: {}\n", .{alloc_err});
@@ -96,22 +102,22 @@ fn lineAction(line: []const u8) !void {
             return;
         } else if (!lineIsSeq(line)) {
             if (try_extract.objectNumField(line)) |field| {
-                if (std.mem.eql(u8, field.name, "minEnemyLevel")) {
+                if (mem.eql(u8, field.name, "minEnemyLevel")) {
                     CurrentMission.minLevel = field.value;
-                } else if (std.mem.eql(u8, field.name, "maxEnemyLevel")) {
+                } else if (mem.eql(u8, field.name, "maxEnemyLevel")) {
                     CurrentMission.maxLevel = field.value;
                 }
             } else if (try_extract.objectStrField(line)) |obj_field| {
-                if (std.mem.eql(u8, obj_field.name, "missionType")) {
-                    CurrentMission.objective = std.meta.stringToEnum(mission_types.Objective, obj_field.value) orelse .UNKNOWN;
-                } else if (std.mem.startsWith(u8, obj_field.name, "UpgradeFinger")) {
-                    const compat_idx = std.mem.indexOf(u8, obj_field.value, "\\\"compat\\\":\\\"/Lotus/Weapons/");
+                if (mem.eql(u8, obj_field.name, "missionType")) {
+                    CurrentMission.objective = std.meta.stringToEnum(Objective, obj_field.value) orelse .UNKNOWN;
+                } else if (mem.startsWith(u8, obj_field.name, "UpgradeFinger")) {
+                    const compat_idx = mem.indexOf(u8, obj_field.value, "\\\"compat\\\":\\\"/Lotus/Weapons/");
                     if (compat_idx) |i| {
                         const wep_idx = i + 28;
-                        const category = (std.mem.indexOf(u8, obj_field.value[wep_idx..], "/") orelse return) + wep_idx + 1;
-                        const category_end = (std.mem.indexOf(u8, obj_field.value[category..], "/") orelse return) + category;
+                        const category = (mem.indexOf(u8, obj_field.value[wep_idx..], "/") orelse return) + wep_idx + 1;
+                        const category_end = (mem.indexOf(u8, obj_field.value[category..], "/") orelse return) + category;
                         std.log.info("unveiled riven for: {s}\n", .{obj_field.value[category..category_end]});
-                        const message_str = try std.fmt.allocPrint(allocator, "Unvieled a {s} Riven!", .{obj_field.value[category..category_end]});
+                        const message_str = try fmt.allocPrint(allocator, "Unvieled a {s} Riven!", .{obj_field.value[category..category_end]});
                         defer allocator.free(message_str);
 
                         sendDiscordMessage(message_str, null, 9442302, false);
@@ -126,73 +132,43 @@ fn lineAction(line: []const u8) !void {
         return;
     }
 
-    const log = log_types.parseLog(line) orelse return;
+    const log = parseLog(line) orelse return;
     if (log.level != .Info) return;
+    var event: Events = .UNKNOWN;
+    var desc: ?[]const u8 = null;
+    var color: discord.EmbedColors = undefined;
+    var arg: union {
+        nwChallenge: NightwaveChallenge,
+        acolyte: []const u8,
+        masteryRank: u8,
+    } = undefined;
+
     switch (log.category) {
         .Sys => {
             if (sys.loginUsername(log)) |username| {
-                // yes this is a leak, but no one will log out & in enough for this to be significant
                 user = allocator.dupe(u8, username) catch unreachable;
-
                 loggedOut = false;
                 std.log.info("{s} logged in\n", .{user});
-                if (!config.notifications.login.enabled) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Logged in", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 1155897, false);
+                event = .login;
+                color = discord.EmbedColors.darkGreen;
             } else if (sys.missionEnd(log)) {
-                std.log.info("mission ended ({s}, {s})\n", .{@tagName(CurrentMission.kind), @tagName(CurrentMission.objective)});
+                std.log.info("mission ended ({s}, {s})\n", .{ @tagName(CurrentMission.kind), @tagName(CurrentMission.objective) });
                 try missionEnd();
+                return;
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
                 std.log.info("nightwave challenge complete: {s}\n", .{nw_challenge.name});
-                if (!config.notifications.nightwaveChallengeComplete.enabled) {
-                    return;
-                }
-
-                if (config.notifications.nightwaveChallengeComplete.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const challenge_str = switch (nw_challenge.tier) {
-                    .Daily => "a daily",
-                    .Weekly => "a weekly",
-                    .EliteWeekly => "an elite weekly",
-                };
-
-                const message_str = try std.fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challenge_str});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, nw_challenge.name, 16449791, false);
+                event = .nightwaveChallengeComplete;
+                color = discord.EmbedColors.pink;
             } else if (sys.exitingGame(log)) {
                 std.log.info("{s} logged out\n", .{user});
                 loggedOut = true;
                 checkMtime = std.time.nanoTimestamp() + 10_000_000_000;
-                if (!config.notifications.logout.enabled) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Logged out", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 13699683, false);
+                event = .logout;
+                color = discord.EmbedColors.magenta;
             } else if (sys.rivenSliverPickup(log)) {
                 std.log.info("Riven Sliver pickup\n", .{});
-                if (!config.notifications.rivenSliverPickup.enabled) {
-                    return;
-                }
-
-                if (config.notifications.rivenSliverPickup.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Found a Riven Sliver!", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 9442302, false);
+                event = .rivenSliverPickup;
+                color = discord.EmbedColors.purple;
             }
         },
         .Script => {
@@ -202,158 +178,97 @@ fn lineAction(line: []const u8) !void {
                 CurrentMission.startedAt = std.time.timestamp();
                 CurrentMission.kind = mission_info.kind;
                 std.log.debug("new mission set: {s}\n", .{CurrentMission.name});
+                return;
             } else if (script.missionSuccess(log)) {
                 CurrentMission.successCount += 1;
                 std.log.debug("(success count increase)\n", .{});
+                return;
             } else if (script.missionFailure(log)) {
-                std.log.info("mission failed: {s}\n", .{CurrentMission.name});
-                if (!config.notifications.missionFailed.enabled) {
-                    return;
-                }
-
-                if (config.notifications.missionFailed.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Failed a mission: {s}", .{CurrentMission.name});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, CurrentMission.name, 15036416, false);
+                event = .missionFailed;
+                color = discord.EmbedColors.orange;
             } else if (script.acolyteDefeated(log)) |acolyte| {
                 std.log.info("acolyte defeated: {s}\n", .{acolyte});
-                if (!config.notifications.acolyteDefeat.enabled) {
-                    return;
-                }
-
-                if (config.notifications.acolyteDefeat.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{acolyte});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 1, config.notifications.acolyteDefeat.showTime);
+                event = .acolyteDefeat;
+                color = discord.EmbedColors.black;
+                arg = .{ .acolyte = acolyte };
             } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
                 std.log.info("eidolon captured\n", .{});
-                if (!config.notifications.eidolonCaptured.enabled) {
-                    return;
-                }
-
-                if (config.notifications.eidolonCaptured.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Captured an Eidolon!", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 65535, false);
+                event = .eidolonCaptured;
+                color = discord.EmbedColors.cyan;
             } else if (script.kuvaLichSpawn(log)) {
                 std.log.info("lich spawned\n", .{});
-                if (!config.notifications.lichSpawn.enabled) {
-                    return;
-                }
-
-                if (config.notifications.lichSpawn.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Spawned a Lich!", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 5776672, false);
+                event = .lichSpawn;
+                color = discord.EmbedColors.darkRed;
             } else if (script.isMasteryRankUp(log)) |new_rank| {
                 std.log.info("Mastery Rank {} reached\n", .{new_rank});
-                if (!config.notifications.masteryRankUp.enabled) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{new_rank});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 30940, config.notifications.masteryRankUp.showTime);
+                event = .masteryRankUp;
+                color = discord.EmbedColors.blue;
+                arg = .{ .masteryRank = new_rank };
             } else if (script.stalkerDefeated(log)) {
                 std.log.info("stalker defeated\n", .{});
-                if (!config.notifications.stalkerDefeat.enabled) {
-                    return;
-                }
-
-                if (config.notifications.stalkerDefeat.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Defeated the stalker!", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 1, false);
+                event = .stalkerDefeat;
+                color = discord.EmbedColors.black;
             } else if (script.lichDefeated(log)) {
                 std.log.info("lich defeated\n", .{});
-                if (!config.notifications.lichDefeat.enabled) {
-                    return;
-                }
-
-                if (config.notifications.lichDefeat.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Defeated their Lich!", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 16777215, config.notifications.lichDefeat.showTime);
+                event = .lichDefeat;
+                color = discord.EmbedColors.white;
             } else if (script.grustragDefeated(log)) {
                 std.log.info("grustrag three defeated\n", .{});
-                if (!config.notifications.grustragDefeat.enabled) {
-                    return;
-                }
-
-                if (config.notifications.grustragDefeat.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 12158478, false);
+                event = .grustragDefeat;
+                color = discord.EmbedColors.brown;
             } else if (script.profitTakerDefeated(log)) {
                 std.log.info("profit taker killed\n", .{});
-                if (!config.notifications.profitTakerKill.enabled) {
-                    return;
-                }
-
-                if (config.notifications.profitTakerKill.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Killed the Profit Taker!", .{});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 12158478, config.notifications.profitTakerKill.showTime);
+                event = .profitTakerKill;
+                color = discord.EmbedColors.brown;
             }
         },
         .Game => {
             if (game.hostMigration(log)) {
                 std.log.debug("suffering host migration...\n", .{});
+                return;
             } else if (game.userDeath(log, user)) |killed_by| {
                 std.log.info("dead to a {s}\n", .{killed_by});
-                if (!config.notifications.death.enabled) {
-                    return;
-                }
-
-                if (config.notifications.death.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                const message_str = try std.fmt.allocPrint(allocator, "Died to a {s}", .{killed_by});
-                defer allocator.free(message_str);
-
-                sendDiscordMessage(message_str, null, 16725760, config.notifications.death.showTime);
+                event = .death;
+                color = discord.EmbedColors.red;
             }
         },
-        else => {},
+        else => return,
     }
+
+    if (event == .UNKNOWN or !shouldPost(event)) {
+        return;
+    }
+
+    const message = switch (event) {
+        .login => try fmt.allocPrint(allocator, "Logged in", .{}),
+        .nightwaveChallengeComplete => try fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challengeTier(arg.nwChallenge)}),
+        .logout => try fmt.allocPrint(allocator, "Logged out", .{}),
+        .rivenSliverPickup => try fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}),
+        .missionFailed => try fmt.allocPrint(allocator, "Failed a mission: {s}", .{CurrentMission.name}),
+        .acolyteDefeat => try fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{arg.acolyte}),
+        .eidolonCaptured => try fmt.allocPrint(allocator, "Captured an Eidolon!", .{}),
+        .lichSpawn => try fmt.allocPrint(allocator, "Spawned a Lich!", .{}),
+        .masteryRankUp => try fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{arg.masteryRank}),
+        .stalkerDefeat => try fmt.allocPrint(allocator, "Defeated the Stalker!", .{}),
+        .lichDefeat => try fmt.allocPrint(allocator, "Defeated their Lich!", .{}),
+        .grustragDefeat => try fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}),
+        .profitTakerKill => try fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}),
+        else => return,
+    };
+    defer {
+        allocator.free(message);
+        if (event == .logout) allocator.free(user);
+    }
+
+    if (event == .nightwaveChallengeComplete) {
+        desc = arg.nwChallenge.name;
+    }
+
+    sendDiscordMessage(message, desc, @intFromEnum(color), entryOf(event).showTime);
 }
 
-pub fn isFinalSortieMission() bool {
+fn isFinalSortieMission() bool {
     return CurrentMission.kind == .Sortie and CurrentMission.minLevel == 80;
 }
 
@@ -382,180 +297,82 @@ fn missionEnd() !void {
 
     var mission_str: []const u8 = "NOTSET";
     defer {
-        if (!std.mem.eql(u8, mission_str, "NOTSET")) allocator.free(mission_str);
+        if (!mem.eql(u8, mission_str, "NOTSET") and CurrentMission.kind != .TreasureHunt) {
+            allocator.free(mission_str);
+        }
     }
-    var desc: ?[]const u8 = null;
-    var color: i32 = 65400;
-    var includeTime = false;
+
+    var event: Events = .UNKNOWN;
     switch (CurrentMission.kind) {
         .EidolonHunt => {
-            if (!config.notifications.eidolonHunt.enabled) {
-                return;
-            }
-
-            includeTime = config.notifications.eidolonHunt.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed an Eidolon hunt!", .{});
+            event = .eidolonHunt;
         },
         .Normal => {
+            event = .normalMission;
             if (CurrentMission.objective == .MT_ENDLESS_EXTERMINATION) {
-                if (!config.notifications.sanctuaryOnslaught.enabled or config.notifications.sanctuaryOnslaught.minLevel > CurrentMission.minLevel) {
-                    return;
-                }
-
-                includeTime = config.notifications.sanctuaryOnslaught.showTime;
-                mission_str = try std.fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
+                event = .sanctuaryOnslaught;
             } else if (CurrentMission.objective == .MT_RAILJACK) {
-                mission_str = try std.fmt.allocPrint(allocator, "Completed a Railjack mission!", .{});
-                return;
-            } else if (!config.notifications.normalMission.enabled or config.notifications.normalMission.minLevel > CurrentMission.minLevel) {
-                return;
+                return; // TODO: there is no setting for this in options
             }
-
-            includeTime = config.notifications.normalMission.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
         },
         .Sortie => {
-            if (!config.notifications.dailySortie.enabled) {
-                return;
-            }
-
-            if (!isFinalSortieMission()) {
-                return;
-            }
-
-            mission_str = try std.fmt.allocPrint(allocator, "Completed the sortie of today!", .{});
+            if (!isFinalSortieMission()) return;
+            event = .dailySortie;
         },
         .Nightmare => {
-            if (!config.notifications.nightmareMission.enabled or config.notifications.nightmareMission.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            includeTime = config.notifications.nightmareMission.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Nightmare {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .nightmareMission;
         },
         .Kuva => {
-            if (!config.notifications.kuvaSiphon.enabled or config.notifications.kuvaSiphon.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            includeTime = config.notifications.kuvaSiphon.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .kuvaSiphon;
         },
         .Syndicate => {
-            if (!config.notifications.syndicateMission.enabled or config.notifications.syndicateMission.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            includeTime = config.notifications.syndicateMission.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a syndicate {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .syndicateMission;
         },
         .KuvaFlood => {
-            if (!config.notifications.kuvaFlood.enabled or config.notifications.kuvaFlood.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            includeTime = config.notifications.kuvaFlood.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Kuva Flood {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .kuvaFlood;
         },
         .SteelPath => {
-            if (!config.notifications.steelPathMission.enabled or config.notifications.steelPathMission.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            includeTime = config.notifications.steelPathMission.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Steel Path {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .steelPathMission;
         },
         .ControlledTerritory => {
-            if (!config.notifications.lichTerritoryMission.enabled or config.notifications.lichTerritoryMission.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            includeTime = config.notifications.lichTerritoryMission.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a Lich territory {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .lichTerritoryMission;
         },
         .Arbitration => {
-            if (!config.notifications.arbitration.enabled or config.notifications.arbitration.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            includeTime = config.notifications.arbitration.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed an Arbitration {s} mission: {s}! ({}-{})", .{
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .arbitration;
         },
         .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => {
-            if (!config.notifications.voidFissure.enabled or config.notifications.voidFissure.minLevel > CurrentMission.minLevel) {
-                return;
-            }
-
-            const relic_str = switch (CurrentMission.kind) {
-                .T1Fissure => "Lith",
-                .T2Fissure => "Meso",
-                .T3Fissure => "Neo",
-                .T4Fissure => "Axi",
-                .T5Fissure => "Requiem",
-                else => "???",
-            };
-
-            includeTime = config.notifications.voidFissure.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed a {s} fissure {s} mission: {s}! ({}-{})", .{
-                relic_str,
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            event = .voidFissure;
         },
         .TreasureHunt => {
-            if (!config.notifications.weeklyAyatanMission.enabled) {
-                return;
-            }
-
-            includeTime = config.notifications.weeklyAyatanMission.showTime;
-            mission_str = try std.fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
+            event = .weeklyAyatanMission;
         },
+    }
+
+    if (event == .UNKNOWN) return;
+
+    if (event == .sanctuaryOnslaught) {
+        mission_str = try fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
+    } else if (event == .weeklyAyatanMission) {
+        mission_str = "Completed the weekly Ayatan hunt mission!";
+    } else {
+        const kind_str = missionKindStr();
+        const obj_str = missionObjStr();
+        mission_str = try fmt.allocPrint(allocator, "Completed {s} {s} mission: {s}! ({}-{})", .{
+            kind_str,
+            obj_str,
+            CurrentMission.name,
+            CurrentMission.minLevel,
+            CurrentMission.maxLevel,
+        });
+    }
+
+    const options = entryOf(event);
+    if (!options.enabled or options.minLevel > CurrentMission.minLevel) {
+        return;
     }
 
     CurrentMission.successCount = 0;
-    sendDiscordMessage(mission_str, desc, color, includeTime);
+    sendDiscordMessage(mission_str, null, @intFromEnum(discord.EmbedColors.lightGreen), options.showTime);
 }
 
 fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, includeTime: bool) void {
@@ -604,6 +421,63 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, i
     }
 }
 
+fn shouldPost(event: Events) bool {
+    const entry = entryOf(event);
+    return entry.enabled and entry.minLevel <= CurrentMission.minLevel;
+}
+
+fn entryOf(event: Events) cfg.NotifEntry {
+    return switch (event) {
+        .login => config.notifications.login,
+        .logout => config.notifications.logout,
+        .masteryRankUp => config.notifications.masteryRankUp,
+        .nightwaveChallengeComplete => config.notifications.nightwaveChallengeComplete,
+        .acolyteDefeat => config.notifications.acolyteDefeat,
+        .stalkerDefeat => config.notifications.stalkerDefeat,
+        .lichSpawn => config.notifications.lichSpawn,
+        .lichDefeat => config.notifications.lichDefeat,
+        .eidolonCaptured => config.notifications.eidolonCaptured,
+        .dailySortie => config.notifications.dailySortie,
+        .rivenSliverPickup => config.notifications.rivenSliverPickup,
+        .missionFailed => config.notifications.missionFailed,
+        .death => config.notifications.death,
+        .normalMission => config.notifications.normalMission,
+        .steelPathMission => config.notifications.steelPathMission,
+        .nightmareMission => config.notifications.nightmareMission,
+        .kuvaSiphon => config.notifications.kuvaSiphon,
+        .kuvaFlood => config.notifications.kuvaFlood,
+        .weeklyAyatanMission => config.notifications.weeklyAyatanMission,
+        .eidolonHunt => config.notifications.eidolonHunt,
+        .voidFissure => config.notifications.voidFissure,
+        .arbitration => config.notifications.arbitration,
+        .sanctuaryOnslaught => config.notifications.sanctuaryOnslaught,
+        .syndicateMission => config.notifications.syndicateMission,
+        .lichTerritoryMission => config.notifications.lichTerritoryMission,
+        .grustragDefeat => config.notifications.grustragDefeat,
+        .profitTakerKill => config.notifications.profitTakerKill,
+        else => unreachable,
+    };
+}
+
+fn missionKindStr() []const u8 {
+    return switch (CurrentMission.kind) {
+        .Nightmare => "a Nightmare",
+        .Kuva => "a Kuva",
+        .KuvaFlood => "a Kuva Flood",
+        .SteelPath => "a Steel Path",
+        .EidolonHunt => "an Eidolon hunt",
+        .Arbitration => "an Arbitration",
+        .T1Fissure => "a Lith Fissure",
+        .T2Fissure => "a Meso Fissure",
+        .T3Fissure => "a Neo Fissure",
+        .T4Fissure => "an Axi Fissure",
+        .T5Fissure => "a Requiem Fissure",
+        .Syndicate => "a Syndicate",
+        .ControlledTerritory => "a Lich controlled territory",
+        else => "a(n)",
+    };
+}
+
 fn missionObjStr() []const u8 {
     return switch (CurrentMission.objective) {
         .MT_CAPTURE => "capture",
@@ -627,12 +501,51 @@ fn timeStr() ![]const u8 {
     const minutes = @divFloor(secs_remaining, 60);
     secs_remaining = @mod(secs_remaining, 60);
     if (hours > 0) {
-        return std.fmt.allocPrint(allocator, "[{d:0>2}:{d:0>2}:{d:0>2}]", .{ hours, minutes, secs_remaining });
+        return fmt.allocPrint(allocator, "[{d:0>2}:{d:0>2}:{d:0>2}]", .{ hours, minutes, secs_remaining });
     }
 
     if (minutes > 0) {
-        return std.fmt.allocPrint(allocator, "[{d:0>2}:{d:0>2}]", .{ minutes, secs_remaining });
+        return fmt.allocPrint(allocator, "[{d:0>2}:{d:0>2}]", .{ minutes, secs_remaining });
     }
 
-    return std.fmt.allocPrint(allocator, "[{d:0>2}s]", .{secs_remaining});
+    return fmt.allocPrint(allocator, "[{d:0>2}s]", .{secs_remaining});
 }
+
+fn challengeTier(challenge: NightwaveChallenge) []const u8 {
+    return switch (challenge.tier) {
+        .EliteWeekly => "an elite weekly",
+        .Weekly => "a weekly",
+        .Daily => "a daily",
+    };
+}
+
+const Events = enum {
+    UNKNOWN,
+    login,
+    logout,
+    masteryRankUp,
+    nightwaveChallengeComplete,
+    acolyteDefeat,
+    stalkerDefeat,
+    lichSpawn,
+    lichDefeat,
+    eidolonCaptured,
+    dailySortie,
+    rivenSliverPickup,
+    missionFailed,
+    death,
+    normalMission,
+    steelPathMission,
+    nightmareMission,
+    kuvaSiphon,
+    kuvaFlood,
+    weeklyAyatanMission,
+    eidolonHunt,
+    voidFissure,
+    arbitration,
+    sanctuaryOnslaught,
+    syndicateMission,
+    lichTerritoryMission,
+    grustragDefeat,
+    profitTakerKill,
+};
