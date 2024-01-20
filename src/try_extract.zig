@@ -19,6 +19,10 @@ pub fn objectStrField(line: []const u8) ?struct { name: []const u8, value: []con
     // JSON mode
     if (trimmed[0] == '"') {
         const colon = std.mem.indexOf(u8, trimmed, ":") orelse return null;
+        if (colon - 2 < 1) {
+            return null;
+        }
+
         name = trimmed[1 .. colon - 2];
         if (trimmed.len > colon + 4 and trimmed[colon + 2] == '"') {
             val = trimmed[colon + 3 .. trimmed.len - 2];
@@ -30,7 +34,7 @@ pub fn objectStrField(line: []const u8) ?struct { name: []const u8, value: []con
         name = trimmed[0..eql];
         val = trimmed[eql + 1 ..];
     }
-
+    
     return .{ .name = name, .value = val };
 }
 
