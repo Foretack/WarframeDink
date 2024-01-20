@@ -49,6 +49,7 @@ pub const Objective = enum {
     MT_TERRITORY,
     MT_EXCAVATE,
     MT_ARTIFACT,
+    MT_ASSASSINATION,
 };
 
 const SuccessConds = union {
