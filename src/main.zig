@@ -343,7 +343,7 @@ fn missionEnd() !void {
 
     if (event == .UNKNOWN) {
         return;
-    } else if (event == .Sortie) {
+    } else if (event == .dailySortie) {
         if (!isFinalSortieMission()) return;
         mission_str = try fmt.allocPrint(allocator, "Completed today's Sortie!", .{});
     } else if (event == .sanctuaryOnslaught) {
