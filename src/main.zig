@@ -295,13 +295,7 @@ fn missionEnd() !void {
         return;
     }
 
-    var mission_str: []const u8 = "NOTSET";
-    defer {
-        if (!mem.eql(u8, mission_str, "NOTSET") and CurrentMission.kind != .TreasureHunt) {
-            allocator.free(mission_str);
-        }
-    }
-
+    var mission_str: []const u8 = undefined;
     var event: Events = .UNKNOWN;
     switch (CurrentMission.kind) {
         .EidolonHunt => {
@@ -316,7 +310,6 @@ fn missionEnd() !void {
             }
         },
         .Sortie => {
-            if (!isFinalSortieMission()) return;
             event = .dailySortie;
         },
         .Nightmare => {
@@ -348,12 +341,15 @@ fn missionEnd() !void {
         },
     }
 
-    if (event == .UNKNOWN) return;
-
-    if (event == .sanctuaryOnslaught) {
+    if (event == .UNKNOWN) {
+        return;
+    } else if (event == .Sortie) {
+        if (!isFinalSortieMission()) return;
+        mission_str = try fmt.allocPrint(allocator, "Completed today's Sortie!", .{});
+    } else if (event == .sanctuaryOnslaught) {
         mission_str = try fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
     } else if (event == .weeklyAyatanMission) {
-        mission_str = "Completed the weekly Ayatan hunt mission!";
+        mission_str = try fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
     } else {
         const kind_str = missionKindStr();
         const obj_str = missionObjStr();
@@ -365,14 +361,13 @@ fn missionEnd() !void {
             CurrentMission.maxLevel,
         });
     }
-
-    const options = entryOf(event);
-    if (!options.enabled or options.minLevel > CurrentMission.minLevel) {
+    defer allocator.free(mission_str);
+    if (!shouldPost(event)) {
         return;
     }
 
     CurrentMission.successCount = 0;
-    sendDiscordMessage(mission_str, null, @intFromEnum(discord.EmbedColors.lightGreen), options.showTime);
+    sendDiscordMessage(mission_str, null, @intFromEnum(discord.EmbedColors.lightGreen), entryOf(event).showTime);
 }
 
 fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, includeTime: bool) void {
