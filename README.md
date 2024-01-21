@@ -37,6 +37,7 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 - Grustrag Three defeat
 - Profit Taker kill
 - Riven unveiled (!)
+- Void Angel kill
 
 ## TODO
 

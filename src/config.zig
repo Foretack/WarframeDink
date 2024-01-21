@@ -33,6 +33,7 @@ pub const Config = struct {
         lichTerritoryMission: NotifEntry,
         grustragDefeat: NotifEntry,
         profitTakerKill: NotifEntry,
+        voidAngelKill: NotifEntry,
     },
 
     pub fn get(allocator: std.mem.Allocator) !Config {

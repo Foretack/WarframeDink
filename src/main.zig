@@ -150,7 +150,7 @@ fn lineAction(line: []const u8) !void {
                 loggedOut = false;
                 std.log.info("{s} logged in\n", .{user});
                 event = .login;
-                color = discord.EmbedColors.darkGreen;
+                color = .darkGreen;
             } else if (sys.missionEnd(log)) {
                 std.log.info("mission ended ({s}, {s})\n", .{ @tagName(CurrentMission.kind), @tagName(CurrentMission.objective) });
                 try missionEnd();
@@ -158,18 +158,18 @@ fn lineAction(line: []const u8) !void {
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
                 std.log.info("nightwave challenge complete: {s}\n", .{nw_challenge.name});
                 event = .nightwaveChallengeComplete;
-                color = discord.EmbedColors.pink;
+                color = .pink;
                 arg = .{ .nwChallenge = nw_challenge };
             } else if (sys.exitingGame(log)) {
                 std.log.info("{s} logged out\n", .{user});
                 loggedOut = true;
                 checkMtime = std.time.nanoTimestamp() + 10_000_000_000;
                 event = .logout;
-                color = discord.EmbedColors.magenta;
+                color = .magenta;
             } else if (sys.rivenSliverPickup(log)) {
                 std.log.info("Riven Sliver pickup\n", .{});
                 event = .rivenSliverPickup;
-                color = discord.EmbedColors.purple;
+                color = .purple;
             }
         },
         .Script => {
@@ -185,43 +185,48 @@ fn lineAction(line: []const u8) !void {
                 std.log.debug("(success count increase)\n", .{});
                 return;
             } else if (script.missionFailure(log)) {
+                std.log.info("mission failed :(\n", .{});
                 event = .missionFailed;
-                color = discord.EmbedColors.orange;
+                color = .orange;
             } else if (script.acolyteDefeated(log)) |acolyte| {
                 std.log.info("acolyte defeated: {s}\n", .{acolyte});
                 event = .acolyteDefeat;
-                color = discord.EmbedColors.black;
+                color = .black;
                 arg = .{ .acolyte = acolyte };
             } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
                 std.log.info("eidolon captured\n", .{});
                 event = .eidolonCaptured;
-                color = discord.EmbedColors.cyan;
+                color = .cyan;
             } else if (script.kuvaLichSpawn(log)) {
                 std.log.info("lich spawned\n", .{});
                 event = .lichSpawn;
-                color = discord.EmbedColors.darkRed;
+                color = .darkRed;
             } else if (script.isMasteryRankUp(log)) |new_rank| {
                 std.log.info("Mastery Rank {} reached\n", .{new_rank});
                 event = .masteryRankUp;
-                color = discord.EmbedColors.blue;
+                color = .blue;
                 arg = .{ .masteryRank = new_rank };
             } else if (script.stalkerDefeated(log)) {
                 std.log.info("stalker defeated\n", .{});
                 event = .stalkerDefeat;
-                color = discord.EmbedColors.black;
+                color = .black;
             } else if (script.lichDefeated(log)) {
                 std.log.info("lich defeated\n", .{});
                 event = .lichDefeat;
-                color = discord.EmbedColors.white;
+                color = .white;
             } else if (script.grustragDefeated(log)) {
                 std.log.info("grustrag three defeated\n", .{});
                 event = .grustragDefeat;
-                color = discord.EmbedColors.brown;
+                color = .brown;
             } else if (script.profitTakerDefeated(log)) {
                 std.log.info("profit taker killed\n", .{});
                 event = .profitTakerKill;
-                color = discord.EmbedColors.brown;
+                color = .brown;
+            } else if (script.voidAngelKilled(log)) {
+                std.log.info("void angel killed\n", .{});
+                event = .voidAngelKill;
+                color = .cyan;
             }
         },
         .Game => {
@@ -231,7 +236,7 @@ fn lineAction(line: []const u8) !void {
             } else if (game.userDeath(log, user)) |killed_by| {
                 std.log.info("dead to a {s}\n", .{killed_by});
                 event = .death;
-                color = discord.EmbedColors.red;
+                color = .red;
             }
         },
         else => return,
@@ -255,6 +260,7 @@ fn lineAction(line: []const u8) !void {
         .lichDefeat => try fmt.allocPrint(allocator, "Defeated their Lich!", .{}),
         .grustragDefeat => try fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}),
         .profitTakerKill => try fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}),
+        .voidAngelKill => try fmt.allocPrint(allocator, "Killed a dormant Void Angel!", .{}),
         else => return,
     };
     defer {
@@ -427,6 +433,7 @@ fn entryOf(event: Events) cfg.NotifEntry {
         .lichTerritoryMission => config.notifications.lichTerritoryMission,
         .grustragDefeat => config.notifications.grustragDefeat,
         .profitTakerKill => config.notifications.profitTakerKill,
+        .voidAngelKill => config.notifications.voidAngelKill,
         else => unreachable,
     };
 }
@@ -521,4 +528,5 @@ const Events = enum {
     lichTerritoryMission,
     grustragDefeat,
     profitTakerKill,
+    voidAngelKill,
 };

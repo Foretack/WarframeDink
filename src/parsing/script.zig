@@ -144,3 +144,11 @@ pub fn profitTakerDefeated(log: log_types.LogEntry) bool {
 
     return mem.endsWith(u8, log.message, "Eudico/DBntyFourSatelReal0601Eudico");
 }
+
+pub fn voidAngelKilled(log: log_types.LogEntry) bool {
+    if (!mem.eql(u8, log.luaFile orelse return false, "ZarimanHandleVoidAngelSpawns.lua")) {
+        return;
+    }
+
+    return mem.eql(u8, log.message, ": Opt-In Void Angel Killed!");
+}

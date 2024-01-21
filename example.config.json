@@ -95,6 +95,9 @@
         "profitTakerKill": {
             "enabled": true,
             "showTime": true
+        },
+        "voidAngelKill": {
+            "enabled": true
         }
     }
 }
