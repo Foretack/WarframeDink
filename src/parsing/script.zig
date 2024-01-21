@@ -147,7 +147,7 @@ pub fn profitTakerDefeated(log: log_types.LogEntry) bool {
 
 pub fn voidAngelKilled(log: log_types.LogEntry) bool {
     if (!mem.eql(u8, log.luaFile orelse return false, "ZarimanHandleVoidAngelSpawns.lua")) {
-        return;
+        return false;
     }
 
     return mem.eql(u8, log.message, ": Opt-In Void Angel Killed!");
