@@ -8,8 +8,20 @@ pub fn missionInfo(log: log_types.LogEntry) ?struct { name: []const u8, kind: mi
         return null;
     }
 
-    if (std.mem.startsWith(u8, log.message, ": Cached mission name=")) {
-        std.debug.print("Cached: {s}\n", .{log.message});
+    if (std.mem.startsWith(u8, log.message, ": Mission name:")) {
+        const kind_separator = std.mem.lastIndexOf(u8, log.message, " - ");
+        if (kind_separator != null) {
+            return .{
+                .name = log.message[16..kind_separator.?],
+                .kind = mission.missionKind(log.message, kind_separator.?),
+            };
+        }
+
+        return .{
+            .name = log.message[16..],
+            .kind = .Normal,
+        };
+    } else if (std.mem.startsWith(u8, log.message, ": Cached mission name=")) {
         const try_idx = std.mem.lastIndexOf(u8, log.message, " (SolNode");
         const r_idx = try_idx orelse std.mem.lastIndexOf(u8, log.message, " ()") orelse return null;
         const message = log.message[22..r_idx];
