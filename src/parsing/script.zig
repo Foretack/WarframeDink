@@ -1,31 +1,18 @@
 const std = @import("std");
+const mem = std.mem;
 const log_types = @import("../log_types.zig");
 const game_types = @import("../game_types.zig");
 const mission = @import("../current_mission.zig");
 
 pub fn missionInfo(log: log_types.LogEntry) ?struct { name: []const u8, kind: mission.MissionKind } {
-    if (!std.mem.eql(u8, log.luaFile orelse return null, "ThemedSquadOverlay.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return null, "ThemedSquadOverlay.lua")) {
         return null;
     }
 
-    if (std.mem.startsWith(u8, log.message, ": Mission name:")) {
-        const kind_separator = std.mem.lastIndexOf(u8, log.message, " - ");
-        if (kind_separator != null) {
-            return .{
-                .name = log.message[16..kind_separator.?],
-                .kind = mission.missionKind(log.message, kind_separator.?),
-            };
-        }
-
-        return .{
-            .name = log.message[16..],
-            .kind = .Normal,
-        };
-    } else if (std.mem.startsWith(u8, log.message, ": Cached mission name=")) {
-        const try_idx = std.mem.lastIndexOf(u8, log.message, " (SolNode");
-        const r_idx = try_idx orelse std.mem.lastIndexOf(u8, log.message, " ()") orelse return null;
+    if (mem.startsWith(u8, log.message, ": Cached mission name=")) {
+        const r_idx = mem.lastIndexOf(u8, log.message, " (") orelse return null;
         const message = log.message[22..r_idx];
-        const kind_separator = std.mem.lastIndexOf(u8, message, " - ");
+        const kind_separator = mem.lastIndexOf(u8, message, " - ");
         if (kind_separator != null) {
             return .{
                 .name = message[0..kind_separator.?],
@@ -33,21 +20,18 @@ pub fn missionInfo(log: log_types.LogEntry) ?struct { name: []const u8, kind: mi
             };
         }
 
-        return .{
-            .name = message,
-            .kind = .Normal,
-        };
+        return .{ .name = message, .kind = .Normal };
     }
 
     return null;
 }
 
 pub fn missionSuccess(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "EndOfMatch.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "EndOfMatch.lua")) {
         return false;
     }
 
-    if (!std.mem.eql(u8, log.message, ": Mission Succeeded")) {
+    if (!mem.eql(u8, log.message, ": Mission Succeeded")) {
         return false;
     }
 
@@ -55,11 +39,11 @@ pub fn missionSuccess(log: log_types.LogEntry) bool {
 }
 
 pub fn missionFailure(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "EndOfMatch.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "EndOfMatch.lua")) {
         return false;
     }
 
-    if (!std.mem.eql(u8, log.message, ": Mission Failed")) {
+    if (!mem.eql(u8, log.message, ": Mission Failed")) {
         return false;
     }
 
@@ -67,11 +51,11 @@ pub fn missionFailure(log: log_types.LogEntry) bool {
 }
 
 pub fn acolyteDefeated(log: log_types.LogEntry) ?[]const u8 {
-    if (!std.mem.eql(u8, log.luaFile orelse return null, "Transmission.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return null, "Transmission.lua")) {
         return null;
     }
 
-    const last_idx = std.mem.lastIndexOf(u8, log.message, "/") orelse return null;
+    const last_idx = mem.lastIndexOf(u8, log.message, "/") orelse return null;
     const acolyteString = log.message[last_idx + 1 .. log.message.len - 6];
     const acolyte = std.meta.stringToEnum(game_types.Acolytes, acolyteString) orelse return null;
     return switch (acolyte) {
@@ -85,19 +69,19 @@ pub fn acolyteDefeated(log: log_types.LogEntry) ?[]const u8 {
 }
 
 pub fn stalkerDefeated(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "Transmission.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "Transmission.lua")) {
         return false;
     }
 
-    return std.mem.endsWith(u8, log.message, "Stalker/SentientTauntDeath");
+    return mem.endsWith(u8, log.message, "Stalker/SentientTauntDeath");
 }
 
 pub fn eidolonCaptured(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "TeralystAvatarScript.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "TeralystAvatarScript.lua")) {
         return false;
     }
 
-    if (!std.mem.eql(u8, log.message, ": Teralyst Captured")) {
+    if (!mem.eql(u8, log.message, ": Teralyst Captured")) {
         return false;
     }
 
@@ -105,11 +89,11 @@ pub fn eidolonCaptured(log: log_types.LogEntry) bool {
 }
 
 pub fn kuvaLichSpawn(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "KuvaLichFinisher.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "KuvaLichFinisher.lua")) {
         return false;
     }
 
-    if (!std.mem.startsWith(u8, log.message, ": creating kuva lich")) {
+    if (!mem.startsWith(u8, log.message, ": creating kuva lich")) {
         return false;
     }
 
@@ -117,12 +101,12 @@ pub fn kuvaLichSpawn(log: log_types.LogEntry) bool {
 }
 
 pub fn isMasteryRankUp(log: log_types.LogEntry) ?u8 {
-    if (!std.mem.startsWith(u8, log.message, ": Dojo: OnTrainingResultUploaded result=true")) {
+    if (!mem.startsWith(u8, log.message, ": Dojo: OnTrainingResultUploaded result=true")) {
         return null;
     }
 
-    const idx1 = (std.mem.indexOf(u8, log.message, "\"NewLevel\":") orelse return null) + 11;
-    const idx2 = (std.mem.indexOf(u8, log.message[idx1..], ",") orelse return null) + idx1;
+    const idx1 = (mem.indexOf(u8, log.message, "\"NewLevel\":") orelse return null) + 11;
+    const idx2 = (mem.indexOf(u8, log.message[idx1..], ",") orelse return null) + idx1;
     var rank: u8 = 0;
     for (log.message[idx1..idx2]) |n| {
         if (n > '9' or n < '0') return null;
@@ -134,11 +118,11 @@ pub fn isMasteryRankUp(log: log_types.LogEntry) ?u8 {
 }
 
 pub fn lichDefeated(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "NemesisAssassinate.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "NemesisAssassinate.lua")) {
         return false;
     }
 
-    if (!std.mem.eql(u8, log.message, ": Active liches loop done")) {
+    if (!mem.eql(u8, log.message, ": Active liches loop done")) {
         return false;
     }
 
@@ -146,17 +130,17 @@ pub fn lichDefeated(log: log_types.LogEntry) bool {
 }
 
 pub fn grustragDefeated(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "HudRedux.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "HudRedux.lua")) {
         return false;
     }
 
-    return std.mem.endsWith(u8, log.message, "GrineerDeathSquad/DeathSquadDefeatedTransmission");
+    return mem.endsWith(u8, log.message, "GrineerDeathSquad/DeathSquadDefeatedTransmission");
 }
 
 pub fn profitTakerDefeated(log: log_types.LogEntry) bool {
-    if (!std.mem.eql(u8, log.luaFile orelse return false, "Transmission.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "Transmission.lua")) {
         return false;
     }
 
-    return std.mem.endsWith(u8, log.message, "Eudico/DBntyFourSatelReal0601Eudico");
+    return mem.endsWith(u8, log.message, "Eudico/DBntyFourSatelReal0601Eudico");
 }
