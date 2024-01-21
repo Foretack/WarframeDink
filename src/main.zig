@@ -297,49 +297,25 @@ fn missionEnd() !void {
     }
 
     var mission_str: []const u8 = undefined;
-    var event: Events = .UNKNOWN;
-    switch (CurrentMission.kind) {
-        .EidolonHunt => {
-            event = .eidolonHunt;
-        },
-        .Normal => {
-            event = .normalMission;
-            if (CurrentMission.objective == .MT_ENDLESS_EXTERMINATION) {
-                event = .sanctuaryOnslaught;
-            } else if (CurrentMission.objective == .MT_RAILJACK) {
-                return; // TODO: there is no setting for this in options
-            }
-        },
-        .Sortie => {
-            event = .dailySortie;
-        },
-        .Nightmare => {
-            event = .nightmareMission;
-        },
-        .Kuva => {
-            event = .kuvaSiphon;
-        },
-        .Syndicate => {
-            event = .syndicateMission;
-        },
-        .KuvaFlood => {
-            event = .kuvaFlood;
-        },
-        .SteelPath => {
-            event = .steelPathMission;
-        },
-        .ControlledTerritory => {
-            event = .lichTerritoryMission;
-        },
-        .Arbitration => {
-            event = .arbitration;
-        },
-        .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => {
-            event = .voidFissure;
-        },
-        .TreasureHunt => {
-            event = .weeklyAyatanMission;
-        },
+    var event: Events = switch (CurrentMission.kind) {
+        .EidolonHunt => .eidolonHunt,
+        .Sortie => .dailySortie,
+        .Nightmare => .nightmareMission,
+        .Kuva => .kuvaSiphon,
+        .Syndicate => .syndicateMission,
+        .KuvaFlood => .kuvaFlood,
+        .SteelPath => .steelPathMission,
+        .ControlledTerritory => .lichTerritoryMission,
+        .Arbitration => .arbitration,
+        .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => .voidFissure,
+        .TreasureHunt => .weeklyAyatanMission,
+        else => .normalMission,
+    };
+
+    if (CurrentMission.objective == .MT_ENDLESS_EXTERMINATION) {
+        event = .sanctuaryOnslaught;
+    } else if (CurrentMission.objective == .MT_RAILJACK) {
+        return; // TODO: there is no setting for this in options
     }
 
     if (event == .UNKNOWN) {
