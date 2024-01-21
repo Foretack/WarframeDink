@@ -159,6 +159,7 @@ fn lineAction(line: []const u8) !void {
                 std.log.info("nightwave challenge complete: {s}\n", .{nw_challenge.name});
                 event = .nightwaveChallengeComplete;
                 color = discord.EmbedColors.pink;
+                arg = .{ .nwChallenge = nw_challenge };
             } else if (sys.exitingGame(log)) {
                 std.log.info("{s} logged out\n", .{user});
                 loggedOut = true;
