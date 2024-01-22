@@ -91,6 +91,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonDailyCodexScan => "Scan 25 objects or enemies",
         .SeasonDailyBulletJump => "Bullet jump 150 times",
         .SeasonDailyAimGlide => "Kill 20 enemies while aim gliding",
+        .SeasonDailyMercyKill => "Mercy kill an enemy",
 
         .SeasonWeeklyLoyalty => "Gain a total of 5000 Standing across all Syndicate factions",
         .SeasonWeeklyCompleteSpy => "Complete 3 spy missions",
