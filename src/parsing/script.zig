@@ -18,6 +18,8 @@ pub fn missionInfo(log: log_types.LogEntry) ?struct { name: []const u8, kind: mi
                 .name = message[0..kind_separator.?],
                 .kind = mission.missionKind(message, kind_separator.?),
             };
+        } else if (mem.startsWith(u8, message, "Weekly Ayatan")) {
+            return .{ .name = message, .kind = .TreasureHunt };
         }
 
         return .{ .name = message, .kind = .Normal };

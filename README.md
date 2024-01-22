@@ -41,6 +41,5 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 
 ## TODO
 
-- Duviri/Plains/Deimos/Fortuna
 - Zenuka defeat
 - Archon hunts

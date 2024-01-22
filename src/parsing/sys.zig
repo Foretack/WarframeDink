@@ -130,6 +130,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyCatchRareVenusFish => "Catch 6 rare servofish in Orb Vallis",
         .SeasonWeeklyCatchRarePlainsFish => "Catch 6 rare fish in the Plains of Eidolon",
 
+        // TODO: This might break at week 10
         .SeasonWeeklyPermanentCompleteMissions => "Complete any 15 missions",
         .SeasonWeeklyPermanentKillEnemies => "Kill 500 enemies",
         .SeasonWeeklyPermanentKillEximus => "Kill 30 eximus enemies",

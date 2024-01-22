@@ -58,9 +58,7 @@ const SuccessConds = union {
 };
 
 pub fn missionKind(logMessage: []const u8, separator: usize) MissionKind {
-    if (std.mem.indexOf(u8, logMessage, "Weekly Ayatan") != null) {
-        return .TreasureHunt;
-    } else if (logMessage.len <= separator + 4) {
+    if (logMessage.len <= separator + 4) {
         return .Normal;
     }
 
