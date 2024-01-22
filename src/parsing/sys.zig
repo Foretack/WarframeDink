@@ -141,6 +141,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyHardKillThumper => "Kill a Tusk Thumper Doma in the Plains of Eidolon",
         .SeasonWeeklyHardKillSilverGroveSpecters => "Kill 3 Silver Grove Specters",
         .SeasonWeeklyHardKillRopalyst => "Defeat the Ropalyst",
+        .SeasonWeeklyHardKillRopalolyst => "Defeat the Ropalolyst",
         .SeasonWeeklyHardKillEximus => " Kill 100 eximus",
         .SeasonWeeklyHardKillEnemies => "Kill 1500 enemies",
         .SeasonWeeklyHardIndexWinStreak => "Win 3 wagers in a row without letting the enemy score in one match of The Index",

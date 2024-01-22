@@ -97,6 +97,7 @@ pub const NightwaveChallenges = enum {
     SeasonWeeklyHardKillThumper,
     SeasonWeeklyHardKillSilverGroveSpecters,
     SeasonWeeklyHardKillRopalyst,
+    SeasonWeeklyHardKillRopalolyst,
     SeasonWeeklyHardKillEximus,
     SeasonWeeklyHardKillEnemies,
     SeasonWeeklyHardIndexWinStreak,
