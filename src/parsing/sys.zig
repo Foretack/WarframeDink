@@ -127,8 +127,8 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyCompleteClemMission => "Help Clem with his weekly mission",
         .SeasonWeeklyCompleteCapture => "Complete 3 capture missions",
         .SeasonWeeklyCompleteAssassination => "Complete 3 Assassination missions",
-        .SeasonWeeklyCatchRareVenusFish => "Catch 6 rare servofish in Orb Vallis",
-        .SeasonWeeklyCatchRarePlainsFish => "Catch 6 rare fish in the Plains of Eidolon",
+        .SeasonWeeklyCatchRareVenusFish => "Catch 3 rare servofish in Orb Vallis",
+        .SeasonWeeklyCatchRarePlainsFish => "Catch 3 rare fish in the Plains of Eidolon",
 
         // TODO: This might break at week 10
         .SeasonWeeklyPermanentCompleteMissions => "Complete any 15 missions",
@@ -156,6 +156,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyHardCompleteNightmareMissions => "Complete 10 nightmare missions of any type",
         .SeasonWeeklyHardTheManyMadeWhole => "Exchange 10 riven slivers for a riven mod",
         .SeasonWeeklyHardRiseOfTheMachine => "Kill 300 enemies using a Necramech without getting destroyed",
+        .SeasonWeeklyHardCollectUniqueResources => "Collect 20 different types of resources",
 
         else => log.message[last_slash_idx + 1 ..],
     };
