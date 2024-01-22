@@ -251,7 +251,7 @@ fn lineAction(line: []const u8) !void {
         .nightwaveChallengeComplete => try fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challengeTier(arg.nwChallenge)}),
         .logout => try fmt.allocPrint(allocator, "Logged out", .{}),
         .rivenSliverPickup => try fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}),
-        .missionFailed => try fmt.allocPrint(allocator, "Failed a mission: {s}", .{CurrentMission.name}),
+        .missionFailed => try fmt.allocPrint(allocator, "Failed a mission!", .{}),
         .acolyteDefeat => try fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{arg.acolyte}),
         .eidolonCaptured => try fmt.allocPrint(allocator, "Captured an Eidolon!", .{}),
         .lichSpawn => try fmt.allocPrint(allocator, "Spawned a Lich!", .{}),
@@ -260,7 +260,7 @@ fn lineAction(line: []const u8) !void {
         .lichDefeat => try fmt.allocPrint(allocator, "Defeated their Lich!", .{}),
         .grustragDefeat => try fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}),
         .profitTakerKill => try fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}),
-        .voidAngelKill => try fmt.allocPrint(allocator, "Killed a dormant Void Angel!", .{}),
+        .voidAngelKill => try fmt.allocPrint(allocator, "Killed a dormant Void Angel! ({}-{})", .{ CurrentMission.minLevel, CurrentMission.maxLevel }),
         else => return,
     };
     defer {
@@ -268,9 +268,11 @@ fn lineAction(line: []const u8) !void {
         if (event == .logout) allocator.free(user);
     }
 
-    if (event == .nightwaveChallengeComplete) {
-        desc = arg.nwChallenge.name;
-    }
+    desc = switch (event) {
+        .nightwaveChallengeComplete => arg.nwChallenge.name,
+        .missionFailed => CurrentMission.name,
+        else => null,
+    };
 
     sendDiscordMessage(message, desc, @intFromEnum(color), entryOf(event).showTime);
 }
