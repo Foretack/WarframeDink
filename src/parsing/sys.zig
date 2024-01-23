@@ -129,6 +129,7 @@ pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.Nightwave
         .SeasonWeeklyCompleteAssassination => "Complete 3 Assassination missions",
         .SeasonWeeklyCatchRareVenusFish => "Catch 3 rare servofish in Orb Vallis",
         .SeasonWeeklyCatchRarePlainsFish => "Catch 3 rare fish in the Plains of Eidolon",
+        .SeasonWeeklyDestroyCrewshipArtillery => "Destroy a Crewship with forward artillery",
 
         // TODO: This might break at week 10
         .SeasonWeeklyPermanentCompleteMissions => "Complete any 15 missions",
