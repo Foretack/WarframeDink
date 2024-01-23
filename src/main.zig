@@ -7,6 +7,7 @@ const sys = @import("parsing/sys.zig");
 const game = @import("parsing/game.zig");
 const script = @import("parsing/script.zig");
 const discord = @import("utils/discord.zig");
+const ss = @import("utils/string_switch.zig");
 const try_extract = @import("parsing/try_extract.zig");
 const fs = std.fs;
 const fmt = std.fmt;
@@ -116,8 +117,9 @@ fn lineAction(line: []const u8) !void {
                         const wep_idx = i + 28;
                         const category = (mem.indexOf(u8, obj_field.value[wep_idx..], "/") orelse return) + wep_idx + 1;
                         const category_end = (mem.indexOf(u8, obj_field.value[category..], "/") orelse return) + category;
-                        std.log.info("unveiled riven for: {s}\n", .{obj_field.value[category..category_end]});
-                        const message_str = try fmt.allocPrint(allocator, "Unvieled a {s} Riven!", .{obj_field.value[category..category_end]});
+                        const name = obj_field.value[category..category_end];
+                        std.log.info("unveiled riven for: {s}\n", .{rivenCategory(name)});
+                        const message_str = try fmt.allocPrint(allocator, "Unvieled a {s} Riven!", .{rivenCategory(name)});
                         defer allocator.free(message_str);
 
                         sendDiscordMessage(message_str, null, 9442302, false);
@@ -498,6 +500,13 @@ fn challengeTier(challenge: NightwaveChallenge) []const u8 {
         .EliteWeekly => "an elite weekly",
         .Weekly => "a weekly",
         .Daily => "a daily",
+    };
+}
+
+fn rivenCategory(string: []const u8) []const u8 {
+    return switch (ss.stringSwitch(string)) {
+        ss.case("LongGuns") => "shotgun",
+        else => string,
     };
 }
 
