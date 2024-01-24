@@ -136,7 +136,7 @@ fn lineAction(line: []const u8) !void {
 
     const log = parseLog(line) orelse return;
     if (log.level != .Info) return;
-    var event: Events = .UNKNOWN;
+    var notif: struct { cfg.NotifEntry, Events } = .{ .{ .enabled = false }, .UNKNOWN };
     var desc: ?[]const u8 = null;
     var color: discord.EmbedColors = undefined;
     var arg: union {
@@ -151,7 +151,7 @@ fn lineAction(line: []const u8) !void {
                 user = allocator.dupe(u8, username) catch unreachable;
                 loggedOut = false;
                 std.log.info("{s} logged in\n", .{user});
-                event = .login;
+                notif = entryOf(.login);
                 color = .darkGreen;
             } else if (sys.missionEnd(log)) {
                 std.log.info("mission ended ({s}, {s})\n", .{ @tagName(CurrentMission.kind), @tagName(CurrentMission.objective) });
@@ -159,18 +159,18 @@ fn lineAction(line: []const u8) !void {
                 return;
             } else if (sys.nightwaveChallengeComplete(log)) |nw_challenge| {
                 std.log.info("nightwave challenge complete: {s}\n", .{nw_challenge.name});
-                event = .nightwaveChallengeComplete;
+                notif = entryOf(.nightwaveChallengeComplete);
                 color = .pink;
                 arg = .{ .nwChallenge = nw_challenge };
             } else if (sys.exitingGame(log)) {
                 std.log.info("{s} logged out\n", .{user});
                 loggedOut = true;
                 checkMtime = std.time.nanoTimestamp() + 10_000_000_000;
-                event = .logout;
+                notif = entryOf(.logout);
                 color = .magenta;
             } else if (sys.rivenSliverPickup(log)) {
                 std.log.info("Riven Sliver pickup\n", .{});
-                event = .rivenSliverPickup;
+                notif = entryOf(.rivenSliverPickup);
                 color = .purple;
             }
         },
@@ -188,46 +188,46 @@ fn lineAction(line: []const u8) !void {
                 return;
             } else if (script.missionFailure(log)) {
                 std.log.info("mission failed :(\n", .{});
-                event = .missionFailed;
+                notif = entryOf(.missionFailed);
                 color = .orange;
             } else if (script.acolyteDefeated(log)) |acolyte| {
                 std.log.info("acolyte defeated: {s}\n", .{acolyte});
-                event = .acolyteDefeat;
+                notif = entryOf(.acolyteDefeat);
                 color = .black;
                 arg = .{ .acolyte = acolyte };
             } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
                 std.log.info("eidolon captured\n", .{});
-                event = .eidolonCaptured;
+                notif = entryOf(.eidolonCaptured);
                 color = .cyan;
             } else if (script.kuvaLichSpawn(log)) {
                 std.log.info("lich spawned\n", .{});
-                event = .lichSpawn;
+                notif = entryOf(.lichSpawn);
                 color = .darkRed;
             } else if (script.isMasteryRankUp(log)) |new_rank| {
                 std.log.info("Mastery Rank {} reached\n", .{new_rank});
-                event = .masteryRankUp;
+                notif = entryOf(.masteryRankUp);
                 color = .blue;
                 arg = .{ .masteryRank = new_rank };
             } else if (script.stalkerDefeated(log)) {
                 std.log.info("stalker defeated\n", .{});
-                event = .stalkerDefeat;
+                notif = entryOf(.stalkerDefeat);
                 color = .black;
             } else if (script.lichDefeated(log)) {
                 std.log.info("lich defeated\n", .{});
-                event = .lichDefeat;
+                notif = entryOf(.lichDefeat);
                 color = .white;
             } else if (script.grustragDefeated(log)) {
                 std.log.info("grustrag three defeated\n", .{});
-                event = .grustragDefeat;
+                notif = entryOf(.grustragDefeat);
                 color = .brown;
             } else if (script.profitTakerDefeated(log)) {
                 std.log.info("profit taker killed\n", .{});
-                event = .profitTakerKill;
+                notif = entryOf(.profitTakerKill);
                 color = .brown;
             } else if (script.voidAngelKilled(log)) {
                 std.log.info("void angel killed\n", .{});
-                event = .voidAngelKill;
+                notif = entryOf(.voidAngelKill);
                 color = .cyan;
             }
         },
@@ -237,18 +237,18 @@ fn lineAction(line: []const u8) !void {
                 return;
             } else if (game.userDeath(log, user)) |killed_by| {
                 std.log.info("dead to a {s}\n", .{killed_by});
-                event = .death;
+                notif = entryOf(.death);
                 color = .red;
             }
         },
         else => return,
     }
 
-    if (event == .UNKNOWN or !shouldPost(event)) {
+    if (notif[1] == .UNKNOWN or !shouldPost(notif[0])) {
         return;
     }
 
-    const message = switch (event) {
+    const message = switch (notif[1]) {
         .login => try fmt.allocPrint(allocator, "Logged in", .{}),
         .nightwaveChallengeComplete => try fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challengeTier(arg.nwChallenge)}),
         .logout => try fmt.allocPrint(allocator, "Logged out", .{}),
@@ -267,16 +267,16 @@ fn lineAction(line: []const u8) !void {
     };
     defer {
         allocator.free(message);
-        if (event == .logout) allocator.free(user);
+        if (notif[1] == .logout) allocator.free(user);
     }
 
-    desc = switch (event) {
+    desc = switch (notif[1]) {
         .nightwaveChallengeComplete => arg.nwChallenge.name,
         .missionFailed => CurrentMission.name,
         else => null,
     };
 
-    sendDiscordMessage(message, desc, @intFromEnum(color), entryOf(event).showTime);
+    sendDiscordMessage(message, desc, @intFromEnum(color), notif[0].showTime);
 }
 
 fn isFinalSortieMission() bool {
@@ -307,35 +307,35 @@ fn missionEnd() !void {
     }
 
     var mission_str: []const u8 = undefined;
-    var event: Events = switch (CurrentMission.kind) {
-        .EidolonHunt => .eidolonHunt,
-        .Sortie => .dailySortie,
-        .Nightmare => .nightmareMission,
-        .Kuva => .kuvaSiphon,
-        .Syndicate => .syndicateMission,
-        .KuvaFlood => .kuvaFlood,
-        .SteelPath => .steelPathMission,
-        .ControlledTerritory => .lichTerritoryMission,
-        .Arbitration => .arbitration,
-        .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => .voidFissure,
-        .TreasureHunt => .weeklyAyatanMission,
-        else => .normalMission,
+    var notif: struct { cfg.NotifEntry, Events } = switch (CurrentMission.kind) {
+        .EidolonHunt => entryOf(.eidolonHunt),
+        .Sortie => entryOf(.dailySortie),
+        .Nightmare => entryOf(.nightmareMission),
+        .Kuva => entryOf(.kuvaSiphon),
+        .Syndicate => entryOf(.syndicateMission),
+        .KuvaFlood => entryOf(.kuvaFlood),
+        .SteelPath => entryOf(.steelPathMission),
+        .ControlledTerritory => entryOf(.lichTerritoryMission),
+        .Arbitration => entryOf(.arbitration),
+        .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => entryOf(.voidFissure),
+        .TreasureHunt => entryOf(.weeklyAyatanMission),
+        else => entryOf(.normalMission),
     };
 
     if (CurrentMission.objective == .MT_ENDLESS_EXTERMINATION) {
-        event = .sanctuaryOnslaught;
+        notif = entryOf(.sanctuaryOnslaught);
     } else if (CurrentMission.objective == .MT_RAILJACK) {
         return; // TODO: there is no setting for this in options
     }
 
-    if (event == .UNKNOWN) {
+    if (notif[1] == .UNKNOWN) {
         return;
-    } else if (event == .dailySortie) {
+    } else if (notif[1] == .dailySortie) {
         if (!isFinalSortieMission()) return;
         mission_str = try fmt.allocPrint(allocator, "Completed today's Sortie!", .{});
-    } else if (event == .sanctuaryOnslaught) {
+    } else if (notif[1] == .sanctuaryOnslaught) {
         mission_str = try fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
-    } else if (event == .weeklyAyatanMission) {
+    } else if (notif[1] == .weeklyAyatanMission) {
         mission_str = try fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
     } else {
         const kind_str = missionKindStr();
@@ -349,12 +349,12 @@ fn missionEnd() !void {
         });
     }
     defer allocator.free(mission_str);
-    if (!shouldPost(event)) {
+    if (!shouldPost(notif[0])) {
         return;
     }
 
     CurrentMission.successCount = 0;
-    sendDiscordMessage(mission_str, null, @intFromEnum(discord.EmbedColors.lightGreen), entryOf(event).showTime);
+    sendDiscordMessage(mission_str, null, @intFromEnum(discord.EmbedColors.lightGreen), notif[0].showTime);
 }
 
 fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, includeTime: bool) void {
@@ -403,43 +403,21 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, i
     }
 }
 
-fn shouldPost(event: Events) bool {
-    const entry = entryOf(event);
+fn shouldPost(entry: cfg.NotifEntry) bool {
     return entry.enabled and entry.minLevel <= CurrentMission.minLevel;
 }
 
-fn entryOf(event: Events) cfg.NotifEntry {
-    return switch (event) {
-        .login => config.notifications.login,
-        .logout => config.notifications.logout,
-        .masteryRankUp => config.notifications.masteryRankUp,
-        .nightwaveChallengeComplete => config.notifications.nightwaveChallengeComplete,
-        .acolyteDefeat => config.notifications.acolyteDefeat,
-        .stalkerDefeat => config.notifications.stalkerDefeat,
-        .lichSpawn => config.notifications.lichSpawn,
-        .lichDefeat => config.notifications.lichDefeat,
-        .eidolonCaptured => config.notifications.eidolonCaptured,
-        .dailySortie => config.notifications.dailySortie,
-        .rivenSliverPickup => config.notifications.rivenSliverPickup,
-        .missionFailed => config.notifications.missionFailed,
-        .death => config.notifications.death,
-        .normalMission => config.notifications.normalMission,
-        .steelPathMission => config.notifications.steelPathMission,
-        .nightmareMission => config.notifications.nightmareMission,
-        .kuvaSiphon => config.notifications.kuvaSiphon,
-        .kuvaFlood => config.notifications.kuvaFlood,
-        .weeklyAyatanMission => config.notifications.weeklyAyatanMission,
-        .eidolonHunt => config.notifications.eidolonHunt,
-        .voidFissure => config.notifications.voidFissure,
-        .arbitration => config.notifications.arbitration,
-        .sanctuaryOnslaught => config.notifications.sanctuaryOnslaught,
-        .syndicateMission => config.notifications.syndicateMission,
-        .lichTerritoryMission => config.notifications.lichTerritoryMission,
-        .grustragDefeat => config.notifications.grustragDefeat,
-        .profitTakerKill => config.notifications.profitTakerKill,
-        .voidAngelKill => config.notifications.voidAngelKill,
-        else => unreachable,
-    };
+fn entryOf(comptime event: Events) struct { cfg.NotifEntry, Events } {
+    std.debug.print("Looking for event: {s}\n", .{@tagName(event)});
+    inline for (comptime std.meta.fieldNames(cfg.Notifications)) |field| {
+        if (comptime !mem.eql(u8, field, @tagName(event))) continue;
+        const result = .{ @field(config.notifications, field), event };
+        std.debug.print("found: {any}\n", .{result});
+        return result;
+    }
+
+    std.debug.print("EVENT UNREACHABLE: {s}\n", .{@tagName(event)});
+    unreachable;
 }
 
 fn missionKindStr() []const u8 {
