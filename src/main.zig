@@ -408,15 +408,12 @@ fn shouldPost(entry: cfg.NotifEntry) bool {
 }
 
 fn entryOf(comptime event: Events) struct { cfg.NotifEntry, Events } {
-    std.debug.print("Looking for event: {s}\n", .{@tagName(event)});
     inline for (comptime std.meta.fieldNames(cfg.Notifications)) |field| {
         if (comptime !mem.eql(u8, field, @tagName(event))) continue;
-        const result = .{ @field(config.notifications, field), event };
-        std.debug.print("found: {any}\n", .{result});
-        return result;
+        return .{ @field(config.notifications, field), event };
     }
 
-    std.debug.print("EVENT UNREACHABLE: {s}\n", .{@tagName(event)});
+    std.log.err("Notification entry of event {s} is not present in notifications config\n", .{@tagName(event)});
     unreachable;
 }
 

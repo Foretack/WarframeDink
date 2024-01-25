@@ -9,9 +9,10 @@ pub fn stringSwitch(string: []const u8) usize {
 
 pub fn case(comptime string: []const u8) usize {
     var i: usize = 0;
-    for (string) |char| {
+    inline for (string) |char| {
         i += char;
     }
 
+    if (!@inComptime()) unreachable;
     return i;
 }
