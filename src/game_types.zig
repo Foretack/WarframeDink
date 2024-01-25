@@ -49,6 +49,7 @@ pub const NightwaveChallenges = enum {
     SeasonDailyAimGlide,
     SeasonDailyMercyKill,
     SeasonDailyCompleteMissionPrimary,
+    SeasonDailyBuildersTouch,
 
     SeasonWeeklyLoyalty,
     SeasonWeeklyCompleteSpy,
