@@ -306,6 +306,11 @@ fn missionEnd() !void {
         return;
     }
 
+    if (CurrentMission.successCount == 0) {
+        std.log.info("Mission ended without success count increase\n", .{});
+        return;
+    }
+
     var mission_str: []const u8 = undefined;
     var notif: struct { cfg.NotifEntry, Events } = switch (CurrentMission.kind) {
         .EidolonHunt => entryOf(.eidolonHunt),
