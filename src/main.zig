@@ -239,6 +239,10 @@ fn lineAction(line: []const u8) !void {
                 std.log.info("dead to a {s}\n", .{killed_by});
                 notif = entryOf(.death);
                 color = .red;
+            } else if (game.zanukaDefeat(log)) {
+                std.log.info("zanuka hunter defeated\n", .{});
+                notif = entryOf(.zanukaDefeat);
+                color = .brown;
             }
         },
         else => return,
@@ -261,6 +265,7 @@ fn lineAction(line: []const u8) !void {
         .stalkerDefeat => try fmt.allocPrint(allocator, "Defeated the Stalker!", .{}),
         .lichDefeat => try fmt.allocPrint(allocator, "Defeated their Lich!", .{}),
         .grustragDefeat => try fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}),
+        .zanukaDefeat => try fmt.allocPrint(allocator, "Defeated the Zanuka Hunter!", .{}),
         .profitTakerKill => try fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}),
         .voidAngelKill => try fmt.allocPrint(allocator, "Killed a dormant Void Angel! ({}-{})", .{ CurrentMission.minLevel, CurrentMission.maxLevel }),
         else => return,
@@ -519,6 +524,7 @@ const Events = enum {
     syndicateMission,
     lichTerritoryMission,
     grustragDefeat,
+    zanukaDefeat,
     profitTakerKill,
     voidAngelKill,
 };

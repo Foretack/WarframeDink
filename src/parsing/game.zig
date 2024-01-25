@@ -16,3 +16,7 @@ pub fn userDeath(log: log_types.LogEntry, playerName: []const u8) ?[]const u8 {
     const using_a_idx = std.mem.indexOf(u8, log.message, "using a ") orelse return null;
     return log.message[from_level_idx + 7 .. using_a_idx];
 }
+
+pub fn zanukaDefeat(log: log_types.LogEntry) bool {
+    return std.mem.endsWith(u8, log.message, "CorpusHarvesterDeathAladV");
+}

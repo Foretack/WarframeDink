@@ -92,6 +92,9 @@
         "grustragDefeat": {
             "enabled": true
         },
+        "zanukaDefeat": {
+            "enabled": true
+        },
         "profitTakerKill": {
             "enabled": true,
             "showTime": true
