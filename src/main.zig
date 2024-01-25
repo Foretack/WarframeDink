@@ -449,6 +449,7 @@ fn missionObjStr() []const u8 {
         .MT_TERRITORY => "interception",
         .MT_ARTIFACT => "disruption",
         .MT_ASSASSINATION => "assassination",
+        .MT_SABOTAGE => "sabotage",
         else => "",
     };
 }
