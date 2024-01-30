@@ -257,7 +257,7 @@ fn lineAction(line: []const u8) !void {
         .nightwaveChallengeComplete => try fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challengeTier(arg.nwChallenge)}),
         .logout => try fmt.allocPrint(allocator, "Logged out", .{}),
         .rivenSliverPickup => try fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}),
-        .missionFailed => try fmt.allocPrint(allocator, "Failed a mission!", .{}),
+        .missionFailed => try fmt.allocPrint(allocator, "Failed {s} {s} mission!", .{ missionKindStr(), missionObjStr() }),
         .acolyteDefeat => try fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{arg.acolyte}),
         .eidolonCaptured => try fmt.allocPrint(allocator, "Captured an Eidolon!", .{}),
         .lichSpawn => try fmt.allocPrint(allocator, "Spawned a Lich!", .{}),
