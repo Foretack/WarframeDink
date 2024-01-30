@@ -34,6 +34,7 @@ lichTerritoryMission: NotifEntry = .{},
 grustragDefeat: NotifEntry = .{},
 profitTakerKill: NotifEntry = .{},
 voidAngelKill: NotifEntry = .{},
+kahlMission: NotifEntry = .{},
 
 var arena: std.heap.ArenaAllocator = undefined;
 

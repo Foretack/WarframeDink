@@ -333,6 +333,7 @@ fn missionEnd() !void {
         .Arbitration => entryOf(.arbitration),
         .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => entryOf(.voidFissure),
         .TreasureHunt => entryOf(.weeklyAyatanMission),
+        .KahlMission => entryOf(.kahlMission),
         else => entryOf(.normalMission),
     };
 

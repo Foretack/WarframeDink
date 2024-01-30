@@ -83,6 +83,10 @@
     "syndicateMission": {
         "enabled": true
     },
+    "kahlMission": {
+        "enabled": true,
+        "showTime": true
+    },
     "lichTerritoryMission": {
         "enabled": true,
         "minLevel": 90,
