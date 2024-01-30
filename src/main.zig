@@ -292,6 +292,10 @@ fn isFinalSortieMission() bool {
     return CurrentMission.kind == .Sortie and CurrentMission.minLevel == 80;
 }
 
+fn isFinalArchonMission() bool {
+    return CurrentMission.kind == .ArchonHunt and CurrentMission.objective == .MT_ASSASSINATION;
+}
+
 fn lineIsSeq(line: []const u8) bool {
     if (line.len < 6) return false;
     var i: usize = 0;
@@ -334,6 +338,7 @@ fn missionEnd() !void {
         .T1Fissure, .T2Fissure, .T3Fissure, .T4Fissure, .T5Fissure => entryOf(.voidFissure),
         .TreasureHunt => entryOf(.weeklyAyatanMission),
         .KahlMission => entryOf(.kahlMission),
+        .ArchonHunt => entryOf(.weeklyArchonHunt),
         else => entryOf(.normalMission),
     };
 
@@ -357,6 +362,10 @@ fn missionEnd() !void {
         },
         .kahlMission => {
             mission_str = try fmt.allocPrint(allocator, "Completed the weekly Kahl mission!", .{});
+        },
+        .weeklyArchonHunt => {
+            if (!isFinalArchonMission()) return;
+            mission_str = try fmt.allocPrint(allocator, "Completed the weekly Archon hunt mission!", .{});
         },
         else => {
             const kind_str = missionKindStr();
@@ -432,7 +441,6 @@ fn shouldPost(entry: cfg.NotifEntry) bool {
 fn entryOf(comptime event: Events) struct { cfg.NotifEntry, Events } {
     inline for (comptime std.meta.fieldNames(cfg)) |field| {
         if (comptime !mem.eql(u8, field, @tagName(event))) continue;
-        std.debug.print("{any}\n", .{@field(config, field)});
         return .{ @field(config, field), event };
     }
 
@@ -567,4 +575,5 @@ const Events = enum {
     profitTakerKill,
     voidAngelKill,
     kahlMission,
+    weeklyArchonHunt,
 };

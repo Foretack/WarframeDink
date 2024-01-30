@@ -31,6 +31,7 @@ pub const MissionKind = enum {
     Syndicate,
     ControlledTerritory,
     KahlMission,
+    ArchonHunt,
 };
 
 pub const Objective = enum {
@@ -95,6 +96,7 @@ pub fn missionKind(logMessage: []const u8, separator: usize) MissionKind {
         case("T5 FISSURE") => .T5Fissure,
         case("SYNDICATE") => .Syndicate,
         case("Controlled Territory") => .ControlledTerritory,
+        case("Archon Hunt") => .ArchonHunt,
         else => .Normal,
     };
 }

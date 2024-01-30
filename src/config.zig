@@ -35,6 +35,7 @@ grustragDefeat: NotifEntry = .{},
 profitTakerKill: NotifEntry = .{},
 voidAngelKill: NotifEntry = .{},
 kahlMission: NotifEntry = .{},
+weeklyArchonHunt: NotifEntry = .{},
 
 var arena: std.heap.ArenaAllocator = undefined;
 

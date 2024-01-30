@@ -38,8 +38,8 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 - Profit Taker kill
 - Riven unveiled (!)
 - Void Angel kill
+- Archon hunts
 
 ## TODO
 
-- Archon hunts
 - Faction rank ups
