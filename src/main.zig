@@ -108,6 +108,8 @@ fn lineAction(line: []const u8) !void {
                 } else if (mem.eql(u8, field.name, "maxEnemyLevel")) {
                     CurrentMission.maxLevel = field.value;
                 }
+
+                return;
             } else if (try_extract.objectStrField(line)) |obj_field| {
                 if (mem.eql(u8, obj_field.name, "missionType")) {
                     CurrentMission.objective = std.meta.stringToEnum(Objective, obj_field.value) orelse .UNKNOWN;
@@ -124,9 +126,11 @@ fn lineAction(line: []const u8) !void {
 
                         sendDiscordMessage(message_str, null, 9442302, false);
                     }
-
-                    return;
+                } else if (mem.eql(u8, obj_field.name, "goalTag") and mem.eql(u8, obj_field.value, "KahlMission")) {
+                    CurrentMission.kind = .KahlMission;
                 }
+
+                return;
             }
         } else readingObject = false;
     } else if (try_extract.isObjectDumpStart(line)) {
@@ -338,25 +342,32 @@ fn missionEnd() !void {
         return; // TODO: there is no setting for this in options
     }
 
-    if (notif[1] == .UNKNOWN) {
-        return;
-    } else if (notif[1] == .dailySortie) {
-        if (!isFinalSortieMission()) return;
-        mission_str = try fmt.allocPrint(allocator, "Completed today's Sortie!", .{});
-    } else if (notif[1] == .sanctuaryOnslaught) {
-        mission_str = try fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
-    } else if (notif[1] == .weeklyAyatanMission) {
-        mission_str = try fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
-    } else {
-        const kind_str = missionKindStr();
-        const obj_str = missionObjStr();
-        mission_str = try fmt.allocPrint(allocator, "Completed {s} {s} mission: {s}! ({}-{})", .{
-            kind_str,
-            obj_str,
-            CurrentMission.name,
-            CurrentMission.minLevel,
-            CurrentMission.maxLevel,
-        });
+    switch (notif[1]) {
+        .UNKNOWN => return,
+        .dailySortie => {
+            if (!isFinalSortieMission()) return;
+            mission_str = try fmt.allocPrint(allocator, "Completed today's Sortie!", .{});
+        },
+        .sanctuaryOnslaught => {
+            mission_str = try fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
+        },
+        .weeklyAyatanMission => {
+            mission_str = try fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
+        },
+        .kahlMission => {
+            mission_str = try fmt.allocPrint(allocator, "Completed the weekly Kahl mission!", .{});
+        },
+        else => {
+            const kind_str = missionKindStr();
+            const obj_str = missionObjStr();
+            mission_str = try fmt.allocPrint(allocator, "Completed {s} {s} mission: {s}! ({}-{})", .{
+                kind_str,
+                obj_str,
+                CurrentMission.name,
+                CurrentMission.minLevel,
+                CurrentMission.maxLevel,
+            });
+        },
     }
     defer allocator.free(mission_str);
     if (!shouldPost(notif[0])) {
@@ -554,4 +565,5 @@ const Events = enum {
     zanukaDefeat,
     profitTakerKill,
     voidAngelKill,
+    kahlMission,
 };

@@ -30,6 +30,7 @@ pub const MissionKind = enum {
     T5Fissure,
     Syndicate,
     ControlledTerritory,
+    KahlMission,
 };
 
 pub const Objective = enum {
