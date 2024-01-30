@@ -52,11 +52,6 @@ pub const Objective = enum {
     MT_ASSASSINATION,
 };
 
-const SuccessConds = union {
-    excavationsComplete: u16,
-    stagesCleared: u16,
-};
-
 pub fn missionKind(logMessage: []const u8, separator: usize) MissionKind {
     if (logMessage.len <= separator + 4) {
         return .Normal;

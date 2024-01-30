@@ -2,105 +2,103 @@
     "profilePictureUrl": "https://content.invisioncic.com/Mwarframe/pages_media/1_LotusSymbol.png",
     "warframeLogFile": "C:\\Users\\YOUR USERNAME\\AppData\\Local\\Warframe\\EE.log",
     "webhookUrl": "https://discord.com/api/webhooks/XXXXX/XXXXX",
-    "notifications": {
-        "login": {
-            "enabled": false
-        },
-        "logout": {
-            "enabled": false
-        },
-        "masteryRankUp": {
-            "enabled": true
-        },
-        "nightwaveChallengeComplete": {
-            "enabled": true
-        },
-        "acolyteDefeat": {
-            "enabled": true
-        },
-        "stalkerDefeat": {
-            "enabled": true
-        },
-        "lichSpawn": {
-            "enabled": true
-        },
-        "lichDefeat": {
-            "enabled": true,
-            "showTime": true
-        },
-        "eidolonCaptured": {
-            "enabled": true,
-            "showTime": true
-        },
-        "dailySortie": {
-            "enabled": true
-        },
-        "rivenSliverPickup": {
-            "enabled": true
-        },
-        "missionFailed": {
-            "enabled": true
-        },
-        "death": {
-            "enabled": true
-        },
-        "normalMission": {
-            "enabled": true,
-            "minLevel": 40
-        },
-        "steelPathMission": {
-            "enabled": true,
-            "showTime": true
-        },
-        "nightmareMission": {
-            "enabled": true
-        },
-        "kuvaSiphon": {
-            "enabled": true
-        },
-        "kuvaFlood": {
-            "enabled": true
-        },
-        "weeklyAyatanMission": {
-            "enabled": true,
-            "showTime": true
-        },
-        "eidolonHunt": {
-            "enabled": true,
-            "showTime": true
-        },
-        "voidFissure": {
-            "enabled": true,
-            "minLevel": 35
-        },
-        "arbitration": {
-            "enabled": true,
-            "showTime": true
-        },
-        "sanctuaryOnslaught": {
-            "enabled": true,
-            "showTime": true
-        },
-        "syndicateMission": {
-            "enabled": true
-        },
-        "lichTerritoryMission": {
-            "enabled": true,
-            "minLevel": 90,
-            "showTime": true
-        },
-        "grustragDefeat": {
-            "enabled": true
-        },
-        "zanukaDefeat": {
-            "enabled": true
-        },
-        "profitTakerKill": {
-            "enabled": true,
-            "showTime": true
-        },
-        "voidAngelKill": {
-            "enabled": true
-        }
+    "login": {
+        "enabled": false
+    },
+    "logout": {
+        "enabled": false
+    },
+    "masteryRankUp": {
+        "enabled": true
+    },
+    "nightwaveChallengeComplete": {
+        "enabled": true
+    },
+    "acolyteDefeat": {
+        "enabled": true
+    },
+    "stalkerDefeat": {
+        "enabled": true
+    },
+    "lichSpawn": {
+        "enabled": true
+    },
+    "lichDefeat": {
+        "enabled": true,
+        "showTime": true
+    },
+    "eidolonCaptured": {
+        "enabled": true,
+        "showTime": true
+    },
+    "dailySortie": {
+        "enabled": true
+    },
+    "rivenSliverPickup": {
+        "enabled": true
+    },
+    "missionFailed": {
+        "enabled": true
+    },
+    "death": {
+        "enabled": true
+    },
+    "normalMission": {
+        "enabled": true,
+        "minLevel": 40
+    },
+    "steelPathMission": {
+        "enabled": true,
+        "showTime": true
+    },
+    "nightmareMission": {
+        "enabled": true
+    },
+    "kuvaSiphon": {
+        "enabled": true
+    },
+    "kuvaFlood": {
+        "enabled": true
+    },
+    "weeklyAyatanMission": {
+        "enabled": true,
+        "showTime": true
+    },
+    "eidolonHunt": {
+        "enabled": true,
+        "showTime": true
+    },
+    "voidFissure": {
+        "enabled": true,
+        "minLevel": 35
+    },
+    "arbitration": {
+        "enabled": true,
+        "showTime": true
+    },
+    "sanctuaryOnslaught": {
+        "enabled": true,
+        "showTime": true
+    },
+    "syndicateMission": {
+        "enabled": true
+    },
+    "lichTerritoryMission": {
+        "enabled": true,
+        "minLevel": 90,
+        "showTime": true
+    },
+    "grustragDefeat": {
+        "enabled": true
+    },
+    "zanukaDefeat": {
+        "enabled": true
+    },
+    "profitTakerKill": {
+        "enabled": true,
+        "showTime": true
+    },
+    "voidAngelKill": {
+        "enabled": true
     }
 }

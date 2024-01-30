@@ -27,7 +27,7 @@ var loggedOut = false;
 var checkMtime: i128 = 0;
 
 pub fn main() !void {
-    config = cfg.Config.get(allocator) catch |err| {
+    config = cfg.Config.init(allocator) catch |err| {
         std.log.err("Failed to load config file: {}\n", .{err});
         std.time.sleep(5_000_000_000);
         return;
@@ -418,9 +418,10 @@ fn shouldPost(entry: cfg.NotifEntry) bool {
 }
 
 fn entryOf(comptime event: Events) struct { cfg.NotifEntry, Events } {
-    inline for (comptime std.meta.fieldNames(cfg.Notifications)) |field| {
+    inline for (comptime std.meta.fieldNames(cfg)) |field| {
         if (comptime !mem.eql(u8, field, @tagName(event))) continue;
-        return .{ @field(config.notifications, field), event };
+        std.debug.print("{any}\n", .{@field(config, field)});
+        return .{ @field(config, field), event };
     }
 
     std.log.err("Notification entry of event {s} is not present in notifications config\n", .{@tagName(event)});
@@ -471,7 +472,7 @@ fn timeStr() ![]const u8 {
     const minutes = @divFloor(secs_remaining, 60);
     secs_remaining = @mod(secs_remaining, 60);
     if (hours > 0) {
-        return fmt.allocPrint(allocator, "[{d:0>2}:{d:0>2}:{d:0>2}]", .{ hours, minutes, secs_remaining });
+        return fmt.allocPrint(allocator, "[{d}:{d:0>2}:{d:0>2}]", .{ hours, minutes, secs_remaining });
     }
 
     if (minutes > 0) {
