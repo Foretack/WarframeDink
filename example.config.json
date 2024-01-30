@@ -104,5 +104,8 @@
     },
     "voidAngelKill": {
         "enabled": true
+    },
+    "weeklyArchonHunt": {
+        "enabled": true
     }
 }
