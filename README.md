@@ -29,17 +29,17 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 - Mission Failed
 - Eidolon Captured
 - Riven Sliver Pickup
-- Nightwave Challenge Completed (some challenge descriptions missing)
+- Nightwave Challenge Completed
 - Acolyte defeated
 - Stalker defeated
 - Death log
 - Kuva/Coprus Lich Spawn/Defeat
-- Grustrag Three defeat
+- Grustrag Three / Zanuka defeat
 - Profit Taker kill
 - Riven unveiled (!)
 - Void Angel kill
 
 ## TODO
 
-- Zenuka defeat
 - Archon hunts
+- Faction rank ups
