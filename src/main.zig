@@ -145,6 +145,7 @@ fn lineAction(line: []const u8) !void {
     var color: discord.EmbedColors = undefined;
     var arg: union {
         nwChallenge: NightwaveChallenge,
+        killedBy: []const u8,
         acolyte: []const u8,
         masteryRank: u8,
     } = undefined;
@@ -243,6 +244,7 @@ fn lineAction(line: []const u8) !void {
                 std.log.info("dead to a {s}\n", .{killed_by});
                 notif = entryOf(.death);
                 color = .red;
+                arg = .{ .killedBy = killed_by };
             } else if (game.zanukaDefeat(log)) {
                 std.log.info("zanuka hunter defeated\n", .{});
                 notif = entryOf(.zanukaDefeat);
@@ -272,6 +274,7 @@ fn lineAction(line: []const u8) !void {
         .zanukaDefeat => try fmt.allocPrint(allocator, "Defeated the Zanuka Hunter!", .{}),
         .profitTakerKill => try fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}),
         .voidAngelKill => try fmt.allocPrint(allocator, "Killed a dormant Void Angel! ({}-{})", .{ CurrentMission.minLevel, CurrentMission.maxLevel }),
+        .death => try fmt.allocPrint(allocator, "Died to a {s}", .{arg.killedBy}),
         else => return,
     };
     defer {
