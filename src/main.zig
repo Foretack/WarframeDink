@@ -69,8 +69,7 @@ pub fn main() !void {
                 return;
             };
             if (read < buf.len) {
-                // 3s
-                std.time.sleep(3_000_000_000);
+                std.time.sleep(1_000_000_000);
                 continue;
             }
         }
