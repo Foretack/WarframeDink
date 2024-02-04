@@ -540,7 +540,7 @@ fn challengeTier(challenge: NightwaveChallenge) []const u8 {
 
 fn rivenCategory(string: []const u8) []const u8 {
     return switch (ss.stringSwitch(string)) {
-        ss.case("LongGuns") => "shotgun",
+        ss.case("LongGuns") => "Shotgun",
         else => string,
     };
 }
