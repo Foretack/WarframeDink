@@ -11,8 +11,13 @@ pub const Mission = struct {
     pub var maxLevel: usize = 0;
     pub var startedAt: i64 = 0;
     pub var successCount: u16 = 0;
-};
 
+    pub var eidolonsCaputred: u3 = 0;
+
+    pub fn resetVars() void {
+        eidolonsCaputred = 0;
+    }
+};
 pub const MissionKind = enum {
     Normal,
     Nightmare,

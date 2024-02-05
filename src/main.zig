@@ -184,6 +184,7 @@ fn lineAction(line: []const u8) !void {
                 CurrentMission.name = allocator.dupe(u8, mission_info.name) catch unreachable;
                 CurrentMission.startedAt = std.time.timestamp();
                 CurrentMission.kind = mission_info.kind;
+                CurrentMission.resetVars();
                 std.log.debug("new mission set: {s}\n", .{CurrentMission.name});
                 return;
             } else if (script.missionSuccess(log)) {
@@ -202,6 +203,7 @@ fn lineAction(line: []const u8) !void {
             } else if (script.eidolonCaptured(log)) {
                 CurrentMission.kind = .EidolonHunt;
                 std.log.info("eidolon captured\n", .{});
+                CurrentMission.eidolonsCaputred += 1;
                 notif = entryOf(.eidolonCaptured);
                 color = .cyan;
             } else if (script.kuvaLichSpawn(log)) {
@@ -368,6 +370,10 @@ fn missionEnd() !void {
         .weeklyArchonHunt => {
             if (!isFinalArchonMission()) return;
             mission_str = try fmt.allocPrint(allocator, "Completed the weekly Archon hunt mission!", .{});
+        },
+        .eidolonHunt => {
+            if (CurrentMission.eidolonsCaputred == 0) return;
+            mission_str = try fmt.allocPrint(allocator, "Completed an Eidolon hunt! ({d}x)", .{CurrentMission.eidolonsCaputred});
         },
         else => {
             const kind_str = missionKindStr();
