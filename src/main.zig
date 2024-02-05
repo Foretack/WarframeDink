@@ -120,7 +120,7 @@ fn lineAction(line: []const u8) !void {
                         const category_end = (mem.indexOf(u8, obj_field.value[category..], "/") orelse return) + category;
                         const name = obj_field.value[category..category_end];
                         std.log.info("unveiled riven for: {s}\n", .{rivenCategory(name)});
-                        const message_str = try fmt.allocPrint(allocator, "Unvieled a {s} Riven!", .{rivenCategory(name)});
+                        const message_str = try fmt.allocPrint(allocator, "Unveiled a {s} Riven!", .{rivenCategory(name)});
                         defer allocator.free(message_str);
 
                         sendDiscordMessage(message_str, null, 9442302, false);
@@ -540,7 +540,7 @@ fn challengeTier(challenge: NightwaveChallenge) []const u8 {
 
 fn rivenCategory(string: []const u8) []const u8 {
     return switch (ss.stringSwitch(string)) {
-        ss.case("LongGuns") => "Shotgun",
+        ss.case("LongGuns") => "Shotguns",
         else => string,
     };
 }
