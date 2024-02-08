@@ -12,7 +12,7 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 - Logged in
 - Logged out
 - Mastery rank up
-- Mission Completed (!)
+- Mission Completed
     * Normal
     * Nightmare
     * Kuva
@@ -36,10 +36,11 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
 - Kuva/Coprus Lich Spawn/Defeat
 - Grustrag Three / Zanuka defeat
 - Profit Taker kill
-- Riven unveiled (!)
+- Exploiter Orb kill
+- Riven unveiled
 - Void Angel kill
 - Archon hunts
 
 ## TODO
 
-- Faction rank ups
+- change config file to TOML

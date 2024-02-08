@@ -102,6 +102,9 @@
         "enabled": true,
         "showTime": true
     },
+    "exploiterOrbKill": {
+        "enabled": true
+    },
     "voidAngelKill": {
         "enabled": true
     },

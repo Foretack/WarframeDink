@@ -231,6 +231,10 @@ fn lineAction(line: []const u8) !void {
                 std.log.info("profit taker killed\n", .{});
                 notif = entryOf(.profitTakerKill);
                 color = .brown;
+            } else if (script.exploiterOrbDefeated(log)) {
+                std.log.info("exploiter orb killed\n", .{});
+                notif = entryOf(.exploiterOrbKill);
+                color = .cyan;
             } else if (script.voidAngelKilled(log)) {
                 std.log.info("void angel killed\n", .{});
                 notif = entryOf(.voidAngelKill);
@@ -274,6 +278,7 @@ fn lineAction(line: []const u8) !void {
         .grustragDefeat => try fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}),
         .zanukaDefeat => try fmt.allocPrint(allocator, "Defeated the Zanuka Hunter!", .{}),
         .profitTakerKill => try fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}),
+        .exploiterOrbKill => try fmt.allocPrint(allocator, "Killed the Exploiter Orb!", .{}),
         .voidAngelKill => try fmt.allocPrint(allocator, "Killed a dormant Void Angel! ({}-{})", .{ CurrentMission.minLevel, CurrentMission.maxLevel }),
         .death => try fmt.allocPrint(allocator, "Died to a {s}", .{arg.killedBy}),
         else => return,
@@ -581,6 +586,7 @@ const Events = enum {
     grustragDefeat,
     zanukaDefeat,
     profitTakerKill,
+    exploiterOrbKill,
     voidAngelKill,
     kahlMission,
     weeklyArchonHunt,

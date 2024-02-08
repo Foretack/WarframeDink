@@ -154,3 +154,11 @@ pub fn voidAngelKilled(log: log_types.LogEntry) bool {
 
     return mem.eql(u8, log.message, ": Opt-In Void Angel Killed!");
 }
+
+pub fn exploiterOrbDefeated(log: log_types.LogEntry) bool {
+    if (!mem.eql(u8, log.luaFile orelse return false, "ArachnoidCamperScript.lua")) {
+        return false;
+    }
+
+    return mem.startsWith(u8, log.message, ": CamperDeath");
+}
