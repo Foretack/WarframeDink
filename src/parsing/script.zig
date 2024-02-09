@@ -140,11 +140,11 @@ pub fn grustragDefeated(log: log_types.LogEntry) bool {
 }
 
 pub fn profitTakerDefeated(log: log_types.LogEntry) bool {
-    if (!mem.eql(u8, log.luaFile orelse return false, "Transmission.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "EidolonMissions.lua")) {
         return false;
     }
 
-    return mem.endsWith(u8, log.message, "Eudico/DBntyFourSatelReal0601Eudico");
+    return mem.endsWith(u8, log.message, ": OnEncounterStatusChanged DynamicRandomEncounterHint status 4");
 }
 
 pub fn voidAngelKilled(log: log_types.LogEntry) bool {
