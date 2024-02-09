@@ -40,7 +40,7 @@ pub fn parseLog(line: []const u8) ?LogEntry {
         level = .UNKNOWN;
         message = line[second_space..];
     } else {
-        const third_space = std.mem.indexOf(u8, line[second_space + 1 ..], " ").? + second_space;
+        const third_space = (std.mem.indexOf(u8, line[second_space + 1 ..], " ") orelse return null) + second_space;
         level = std.meta.stringToEnum(LogLevel, line[second_space + 2 .. third_space - 1]) orelse .UNKNOWN;
         const lua_file_end = std.mem.indexOf(u8, line[third_space..], ".lua");
         if (lua_file_end) |end_idx| {

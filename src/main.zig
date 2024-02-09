@@ -1,7 +1,4 @@
 const std = @import("std");
-const lt = @import("log_types.zig");
-const gt = @import("game_types.zig");
-const mt = @import("current_mission.zig");
 const cfg = @import("config.zig");
 const sys = @import("parsing/sys.zig");
 const game = @import("parsing/game.zig");
@@ -9,13 +6,14 @@ const script = @import("parsing/script.zig");
 const discord = @import("utils/discord.zig");
 const ss = @import("utils/string_switch.zig");
 const try_extract = @import("parsing/try_extract.zig");
+const NightwaveChallenge = @import("game_types.zig").NightwaveChallenge;
+const CurrentMission = @import("current_mission.zig").Mission;
+const Objective = @import("current_mission.zig").Objective;
+const parseLog = @import("log_types.zig").parseLog;
+const dbg = @import("builtin").mode == .Debug;
 const fs = std.fs;
 const fmt = std.fmt;
 const mem = std.mem;
-const NightwaveChallenge = gt.NightwaveChallenge;
-const parseLog = lt.parseLog;
-const CurrentMission = mt.Mission;
-const Objective = mt.Objective;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var allocator = gpa.allocator();
@@ -63,7 +61,7 @@ pub fn main() !void {
                 std.time.sleep(5_000_000_000);
                 return;
             };
-            lineIterate(buf[0..read], if (read < buf.len) read else null) catch |err| {
+            lineIterate(buf[0..read]) catch |err| {
                 std.log.err("Failed to iterate over block: {s}\nblock:\n", .{ err, buf[0..read] });
                 std.time.sleep(5_000_000_000);
                 return;
@@ -79,17 +77,14 @@ pub fn main() !void {
     }
 }
 
-fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
-    var line_start_idx: usize = 0;
-    var crlf_idx: ?usize = mem.indexOf(u8, buffer, "\r\n");
-    while (crlf_idx) |line_end_idx| : (crlf_idx = mem.indexOf(u8, buffer[line_start_idx .. stopAt orelse buffer.len], "\r\n")) {
-        const indexed_end = line_end_idx + line_start_idx;
-        lineAction(buffer[line_start_idx..indexed_end]) catch |alloc_err| {
+fn lineIterate(buffer: []u8) !void {
+    var seq = mem.splitSequence(u8, buffer, "\r\n");
+    while (seq.next()) |line| {
+        if (line.len == 0) continue;
+        lineAction(line) catch |alloc_err| {
             std.log.err("Allocation error: {}\n", .{alloc_err});
             return;
         };
-
-        line_start_idx = indexed_end + 2;
     }
 }
 
@@ -324,7 +319,7 @@ pub fn secSinceStart() i64 {
 }
 
 fn missionEnd() !void {
-    if (std.time.timestamp() - CurrentMission.startedAt < 30) {
+    if (!dbg and std.time.timestamp() - CurrentMission.startedAt < 30) {
         return;
     }
 
@@ -402,7 +397,7 @@ fn missionEnd() !void {
 }
 
 fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, includeTime: bool) void {
-    if (secSinceStart() < 3) {
+    if (!dbg and secSinceStart() < 3) {
         return;
     }
 
