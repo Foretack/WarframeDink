@@ -471,6 +471,7 @@ fn missionKindStr() []const u8 {
         .T5Fissure => "a Requiem Fissure",
         .Syndicate => "a Syndicate",
         .ControlledTerritory => "a Lich controlled territory",
+        .Sortie => "a Sortie",
         else => "a(n)",
     };
 }
