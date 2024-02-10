@@ -24,7 +24,7 @@ pub fn objectStrField(line: []const u8) ?struct { name: []const u8, value: []con
         }
 
         name = trimmed[1 .. colon - 2];
-        if (trimmed.len > colon + 5 and trimmed[colon + 2] == '"') {
+        if (trimmed.len > colon + 4 and trimmed[colon + 2] == '"') {
             val = trimmed[colon + 3 .. trimmed.len - 2];
         } else {
             val = trimmed[colon + 2 .. trimmed.len - 1];

@@ -61,7 +61,7 @@ pub fn main() !void {
                 std.time.sleep(5_000_000_000);
                 return;
             };
-            lineIterate(buf[0..read]) catch |err| {
+            lineIterate(buf[0..read], if (read < buf.len) read else null) catch |err| {
                 std.log.err("Failed to iterate over block: {s}\nblock:\n", .{ err, buf[0..read] });
                 std.time.sleep(5_000_000_000);
                 return;
@@ -77,11 +77,12 @@ pub fn main() !void {
     }
 }
 
-fn lineIterate(buffer: []u8) !void {
-    var seq = mem.splitSequence(u8, buffer, "\r\n");
-    while (seq.next()) |line| {
-        if (line.len == 0) continue;
-        lineAction(line) catch |alloc_err| {
+fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
+    var line_start_idx: usize = 0;
+    var crlf_idx: ?usize = mem.indexOf(u8, buffer, "\r\n");
+    while (crlf_idx) |line_end_idx| : (crlf_idx = mem.indexOf(u8, buffer[line_start_idx .. stopAt orelse buffer.len], "\r\n")) {
+        const indexed_end = line_end_idx + line_start_idx;
+        lineAction(buffer[line_start_idx..indexed_end]) catch |alloc_err| {
             std.log.err("Allocation error: {}\n", .{alloc_err});
             return;
         };
