@@ -237,6 +237,10 @@ fn lineAction(line: []const u8) !void {
                 std.log.info("void angel killed\n", .{});
                 notif = entryOf(.voidAngelKill);
                 color = .cyan;
+            } else if (script.onslaughtWaveFinished(log)) {
+                CurrentMission.onslaughtWaves += 1;
+                std.log.info("sanctuary onslaught wave complete ({d})\n", .{CurrentMission.onslaughtWaves});
+                return;
             }
         },
         .Game => {
@@ -362,7 +366,7 @@ fn missionEnd() !void {
             mission_str = try fmt.allocPrint(allocator, "Completed today's Sortie!", .{});
         },
         .sanctuaryOnslaught => {
-            mission_str = try fmt.allocPrint(allocator, "Completed {s}!", .{CurrentMission.name});
+            mission_str = try fmt.allocPrint(allocator, "Completed {d} waves of {s}!", .{ CurrentMission.onslaughtWaves, CurrentMission.name });
         },
         .weeklyAyatanMission => {
             mission_str = try fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
@@ -475,7 +479,7 @@ fn missionKindStr() []const u8 {
         .Syndicate => "a Syndicate",
         .ControlledTerritory => "a Lich controlled territory",
         .Sortie => "a Sortie",
-        else => "a(n)",
+        else => "the",
     };
 }
 

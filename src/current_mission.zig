@@ -13,9 +13,11 @@ pub const Mission = struct {
     pub var successCount: u16 = 0;
 
     pub var eidolonsCaputred: u3 = 0;
+    pub var onslaughtWaves: u16 = 0;
 
     pub fn resetVars() void {
         eidolonsCaputred = 0;
+        onslaughtWaves = 0;
     }
 };
 pub const MissionKind = enum {

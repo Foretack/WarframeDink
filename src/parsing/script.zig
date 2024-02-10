@@ -162,3 +162,11 @@ pub fn exploiterOrbDefeated(log: log_types.LogEntry) bool {
 
     return mem.startsWith(u8, log.message, ": CamperDeath");
 }
+
+pub fn onslaughtWaveFinished(log: log_types.LogEntry) bool {
+    if (!mem.eql(u8, log.luaFile orelse return false, "HudRedux.lua")) {
+        return false;
+    }
+
+    return mem.endsWith(u8, log.message, "SanctuaryOnslaught/DOnslaughtConduitSpawnSmrs");
+}
