@@ -86,6 +86,8 @@ fn lineIterate(buffer: []u8, stopAt: ?usize) !void {
             std.log.err("Allocation error: {}\n", .{alloc_err});
             return;
         };
+
+        line_start_idx = indexed_end + 2;
     }
 }
 
