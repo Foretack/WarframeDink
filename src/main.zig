@@ -380,7 +380,7 @@ fn missionEnd() !void {
         },
         .eidolonHunt => {
             if (CurrentMission.eidolonsCaputred == 0) return;
-            mission_str = try fmt.allocPrint(allocator, "Completed an Eidolon hunt! ({d}x)", .{CurrentMission.eidolonsCaputred});
+            mission_str = try fmt.allocPrint(allocator, "Completed an Eidolon hunt! (x{d})", .{CurrentMission.eidolonsCaputred});
         },
         else => {
             const kind_str = missionKindStr();
