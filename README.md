@@ -23,7 +23,7 @@ You can download the latest version from [here](https://github.com/Foretack/Warf
     * Fissures
     * Arbitration
     * Sanctuary Onslaught
-    * ESO (does not count stages)
+    * ESO
     * Sortie
     * Syndicate
 - Mission Failed
