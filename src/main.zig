@@ -265,30 +265,31 @@ fn lineAction(line: []const u8) !void {
         return;
     }
 
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    const a_alloc = arena.allocator();
+    defer arena.deinit();
+
     const message = switch (notif[1]) {
-        .login => try fmt.allocPrint(allocator, "Logged in", .{}),
-        .nightwaveChallengeComplete => try fmt.allocPrint(allocator, "Completed {s} Nightwave challenge!", .{challengeTier(arg.nwChallenge)}),
-        .logout => try fmt.allocPrint(allocator, "Logged out", .{}),
-        .rivenSliverPickup => try fmt.allocPrint(allocator, "Found a Riven Sliver!", .{}),
-        .missionFailed => try fmt.allocPrint(allocator, "Failed {s} {s} mission!", .{ missionKindStr(), missionObjStr() }),
-        .acolyteDefeat => try fmt.allocPrint(allocator, "Defeated an Acolyte! ({s})", .{arg.acolyte}),
-        .eidolonCaptured => try fmt.allocPrint(allocator, "Captured an Eidolon!", .{}),
-        .lichSpawn => try fmt.allocPrint(allocator, "Spawned a Lich!", .{}),
-        .masteryRankUp => try fmt.allocPrint(allocator, "Reached Mastery Rank {}!", .{arg.masteryRank}),
-        .stalkerDefeat => try fmt.allocPrint(allocator, "Defeated the Stalker!", .{}),
-        .lichDefeat => try fmt.allocPrint(allocator, "Defeated their Lich!", .{}),
-        .grustragDefeat => try fmt.allocPrint(allocator, "Defeated the Grustrag Three!", .{}),
-        .zanukaDefeat => try fmt.allocPrint(allocator, "Defeated the Zanuka Hunter!", .{}),
-        .profitTakerKill => try fmt.allocPrint(allocator, "Killed the Profit Taker!", .{}),
-        .exploiterOrbKill => try fmt.allocPrint(allocator, "Killed the Exploiter Orb!", .{}),
-        .voidAngelKill => try fmt.allocPrint(allocator, "Killed a dormant Void Angel! ({}-{})", .{ CurrentMission.minLevel, CurrentMission.maxLevel }),
-        .death => try fmt.allocPrint(allocator, "Died to a {s}", .{arg.killedBy}),
+        .login => "Logged in",
+        .nightwaveChallengeComplete => try fmt.allocPrint(a_alloc, "Completed {s} Nightwave challenge!", .{challengeTier(arg.nwChallenge)}),
+        .logout => "Logged out",
+        .rivenSliverPickup => "Found a Riven Sliver!",
+        .missionFailed => try fmt.allocPrint(a_alloc, "Failed {s} {s} mission!", .{ missionKindStr(), missionObjStr() }),
+        .acolyteDefeat => try fmt.allocPrint(a_alloc, "Defeated an Acolyte! ({s})", .{arg.acolyte}),
+        .eidolonCaptured => "Captured an Eidolon!",
+        .lichSpawn => "Spawned a Lich!",
+        .masteryRankUp => try fmt.allocPrint(a_alloc, "Reached Mastery Rank {}!", .{arg.masteryRank}),
+        .stalkerDefeat => "Defeated the Stalker!",
+        .lichDefeat => "Defeated their Lich!",
+        .grustragDefeat => "Defeated the Grustrag Three!",
+        .zanukaDefeat => "Defeated the Zanuka Hunter!",
+        .profitTakerKill => "Killed the Profit Taker!",
+        .exploiterOrbKill => "Killed the Exploiter Orb!",
+        .voidAngelKill => try fmt.allocPrint(a_alloc, "Killed a dormant Void Angel! ({}-{})", .{ CurrentMission.minLevel, CurrentMission.maxLevel }),
+        .death => try fmt.allocPrint(a_alloc, "Died to a {s}", .{arg.killedBy}),
         else => return,
     };
-    defer {
-        allocator.free(message);
-        if (notif[1] == .logout) allocator.free(user);
-    }
+    defer if (notif[1] == .logout) allocator.free(user);
 
     desc = switch (notif[1]) {
         .nightwaveChallengeComplete => arg.nwChallenge.name,
@@ -335,6 +336,10 @@ fn missionEnd() !void {
         return;
     }
 
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    const a_alloc = arena.allocator();
+    defer arena.deinit();
+
     var mission_str: []const u8 = undefined;
     var notif: struct { cfg.NotifEntry, Events } = switch (CurrentMission.kind) {
         .EidolonHunt => entryOf(.eidolonHunt),
@@ -359,44 +364,42 @@ fn missionEnd() !void {
         return; // TODO: there is no setting for this in options
     }
 
+    if (!shouldPost(notif[0])) {
+        return;
+    }
+
     switch (notif[1]) {
         .UNKNOWN => return,
         .dailySortie => {
             if (!isFinalSortieMission()) return;
-            mission_str = try fmt.allocPrint(allocator, "Completed today's Sortie!", .{});
+            mission_str = "Completed today's Sortie!";
         },
         .sanctuaryOnslaught => {
-            mission_str = try fmt.allocPrint(allocator, "Completed {d} waves of {s}!", .{ CurrentMission.onslaughtWaves, CurrentMission.name });
+            mission_str = try fmt.allocPrint(a_alloc, "Completed {d} waves of {s}!", .{ CurrentMission.onslaughtWaves, CurrentMission.name });
         },
         .weeklyAyatanMission => {
-            mission_str = try fmt.allocPrint(allocator, "Completed the weekly Ayatan hunt mission!", .{});
+            mission_str = "Completed the weekly Ayatan hunt mission!";
         },
         .kahlMission => {
-            mission_str = try fmt.allocPrint(allocator, "Completed the weekly Kahl mission!", .{});
+            mission_str = "Completed the weekly Kahl mission!";
         },
         .weeklyArchonHunt => {
             if (!isFinalArchonMission()) return;
-            mission_str = try fmt.allocPrint(allocator, "Completed the weekly Archon hunt mission!", .{});
+            mission_str = "Completed the weekly Archon hunt mission!";
         },
         .eidolonHunt => {
             if (CurrentMission.eidolonsCaputred == 0) return;
             mission_str = try fmt.allocPrint(allocator, "Completed an Eidolon hunt! (x{d})", .{CurrentMission.eidolonsCaputred});
         },
         else => {
-            const kind_str = missionKindStr();
-            const obj_str = missionObjStr();
             mission_str = try fmt.allocPrint(allocator, "Completed {s} {s} mission: {s}! ({}-{})", .{
-                kind_str,
-                obj_str,
+                missionKindStr(),
+                missionObjStr(),
                 CurrentMission.name,
                 CurrentMission.minLevel,
                 CurrentMission.maxLevel,
             });
         },
-    }
-    defer allocator.free(mission_str);
-    if (!shouldPost(notif[0])) {
-        return;
     }
 
     CurrentMission.successCount = 0;
@@ -408,10 +411,11 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, i
         return;
     }
 
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    const a_alloc = arena.allocator();
+    defer arena.deinit();
+
     var footer: ?discord.Footer = null;
-    defer {
-        if (footer != null) allocator.free(footer.?.text);
-    }
     if (includeTime) {
         const time_str: ?[]const u8 = timeStr() catch null;
         if (time_str) |time| {
@@ -426,11 +430,10 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, i
         .footer = footer,
     };
 
-    const embed_arr: []discord.Embed = allocator.alloc(discord.Embed, 1) catch |err| {
+    const embed_arr: []discord.Embed = a_alloc.alloc(discord.Embed, 1) catch |err| {
         std.log.err("Failed to allocate embed array: {}\n", .{err});
         return;
     };
-    defer allocator.free(embed_arr);
 
     embed_arr[0] = embed;
     const message = discord.Message{
@@ -439,7 +442,7 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, i
         .embeds = embed_arr,
     };
 
-    const status = message.SendWebhook(allocator, config.webhookUrl) catch |send_err| {
+    const status = message.SendWebhook(a_alloc, config.webhookUrl) catch |send_err| {
         std.log.err("Failed to send webhook: {}\n", .{send_err});
         return;
     };
