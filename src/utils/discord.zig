@@ -23,8 +23,12 @@ pub const Message = struct {
         try headers.append("accept", "*/*");
         try headers.append("Content-Type", "application/json");
 
-        var request = try client.request(.POST, uri, headers, .{});
+        var request = client.request(.POST, uri, headers, .{}) catch |err| {
+            std.log.err("Error ({any}) sending request ({s}) to {s}", .{ err, json, webhookUrl });
+            return err;
+        };
         defer request.deinit();
+
         request.transfer_encoding = .{ .content_length = json.len };
         try request.start();
         try request.writeAll(json);

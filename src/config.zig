@@ -57,4 +57,5 @@ pub const NotifEntry = struct {
     enabled: bool = true,
     minLevel: u16 = 0,
     showTime: bool = false,
+    minTime: u16 = 0,
 };

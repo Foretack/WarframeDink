@@ -453,7 +453,10 @@ fn sendDiscordMessage(title: []const u8, description: ?[]const u8, color: i32, i
 }
 
 fn shouldPost(entry: cfg.NotifEntry) bool {
-    return entry.enabled and entry.minLevel <= CurrentMission.minLevel;
+    if (!entry.enabled) return false;
+    if (entry.minLevel > CurrentMission.minLevel) return false;
+    if (entry.minTime > @divFloor(std.time.timestamp() - CurrentMission.startedAt, 60)) return false;
+    return true;
 }
 
 fn entryOf(comptime event: Events) struct { cfg.NotifEntry, Events } {
