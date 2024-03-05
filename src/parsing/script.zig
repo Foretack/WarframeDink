@@ -172,9 +172,9 @@ pub fn onslaughtWaveFinished(log: log_types.LogEntry) bool {
 }
 
 pub fn duviriStageFinished(log: log_types.LogEntry) bool {
-    if (!mem.eql(u8, log.luaFile orelse return false, "DuviriEndless.lua")) {
+    if (!mem.eql(u8, log.luaFile orelse return false, "ArenaLobby.lua")) {
         return false;
     }
 
-    return mem.eql(u8, log.message, ": DurviriEndless: end room");
+    return mem.eql(u8, log.message, ": endless stage num");
 }
