@@ -14,10 +14,12 @@ pub const Mission = struct {
 
     pub var eidolonsCaputred: u3 = 0;
     pub var onslaughtWaves: u16 = 0;
+    pub var circuitStages: u16 = 0;
 
     pub fn resetVars() void {
         eidolonsCaputred = 0;
         onslaughtWaves = 0;
+        circuitStages = 0;
     }
 };
 pub const MissionKind = enum {
@@ -81,6 +83,7 @@ pub const Objective = enum {
     MT_ARMAGEDDON,
     MT_VOID_CASCADE,
     MT_CORRUPTION,
+    MT_ENDLESS_DUVIRI,
 };
 
 pub fn missionKind(logMessage: []const u8, separator: usize) MissionKind {

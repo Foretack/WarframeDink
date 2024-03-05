@@ -110,5 +110,9 @@
     },
     "weeklyArchonHunt": {
         "enabled": true
+    },
+    "duviriCircuit": {
+        "enabled": true,
+        "showTime": true
     }
 }

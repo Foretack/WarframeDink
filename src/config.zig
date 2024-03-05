@@ -32,11 +32,13 @@ sanctuaryOnslaught: NotifEntry = .{},
 syndicateMission: NotifEntry = .{},
 lichTerritoryMission: NotifEntry = .{},
 grustragDefeat: NotifEntry = .{},
+zanukaDefeat: NotifEntry = .{},
 profitTakerKill: NotifEntry = .{},
 exploiterOrbKill: NotifEntry = .{},
 voidAngelKill: NotifEntry = .{},
 kahlMission: NotifEntry = .{},
 weeklyArchonHunt: NotifEntry = .{},
+duviriCircuit: NotifEntry = .{},
 
 var arena: std.heap.ArenaAllocator = undefined;
 

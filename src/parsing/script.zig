@@ -170,3 +170,11 @@ pub fn onslaughtWaveFinished(log: log_types.LogEntry) bool {
 
     return mem.endsWith(u8, log.message, "SanctuaryOnslaught/DOnslaughtConduitSpawnSmrs");
 }
+
+pub fn duviriStageFinished(log: log_types.LogEntry) bool {
+    if (!mem.eql(u8, log.luaFile orelse return false, "DuviriEndless.lua")) {
+        return false;
+    }
+
+    return mem.eql(u8, log.message, ": DurviriEndless: end room");
+}

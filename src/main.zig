@@ -241,6 +241,10 @@ fn lineAction(line: []const u8) !void {
                 CurrentMission.onslaughtWaves += 1;
                 std.log.info("sanctuary onslaught wave complete ({d})\n", .{CurrentMission.onslaughtWaves});
                 return;
+            } else if (script.duviriStageFinished(log)) {
+                CurrentMission.circuitStages += 1;
+                std.log.info("duviri stage {d} complete", .{CurrentMission.circuitStages});
+                return;
             }
         },
         .Game => {
@@ -362,6 +366,8 @@ fn missionEnd() !void {
         notif = entryOf(.sanctuaryOnslaught);
     } else if (CurrentMission.objective == .MT_RAILJACK) {
         return; // TODO: there is no setting for this in options
+    } else if (CurrentMission.objective == .MT_ENDLESS_DUVIRI) {
+        notif = entryOf(.duviriCircuit);
     }
 
     if (!shouldPost(notif[0])) {
@@ -392,13 +398,20 @@ fn missionEnd() !void {
             mission_str = try fmt.allocPrint(allocator, "Completed an Eidolon hunt! (x{d})", .{CurrentMission.eidolonsCaputred});
         },
         else => {
-            mission_str = try fmt.allocPrint(allocator, "Completed {s} {s} mission: {s}! ({}-{})", .{
-                missionKindStr(),
-                missionObjStr(),
-                CurrentMission.name,
-                CurrentMission.minLevel,
-                CurrentMission.maxLevel,
-            });
+            if (CurrentMission.objective == .MT_ENDLESS_DUVIRI) {
+                mission_str = try fmt.allocPrint(allocator, "Completed {d} stages in Duviri Circuit {s}", .{
+                    CurrentMission.circuitStages,
+                    if (CurrentMission.kind == .SteelPath) "(Steel Path)" else "",
+                });
+            } else {
+                mission_str = try fmt.allocPrint(allocator, "Completed {s} {s} mission: {s}! ({}-{})", .{
+                    missionKindStr(),
+                    missionObjStr(),
+                    CurrentMission.name,
+                    CurrentMission.minLevel,
+                    CurrentMission.maxLevel,
+                });
+            }
         },
     }
 
@@ -599,4 +612,5 @@ const Events = enum {
     voidAngelKill,
     kahlMission,
     weeklyArchonHunt,
+    duviriCircuit,
 };
