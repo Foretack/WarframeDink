@@ -12,7 +12,7 @@ pub const Mission = struct {
     pub var startedAt: i64 = 0;
     pub var successCount: u16 = 0;
 
-    pub var eidolonsCaputred: u3 = 0;
+    pub var eidolonsCaputred: u5 = 0;
     pub var onslaughtWaves: u16 = 0;
     pub var circuitStages: u16 = 0;
 
