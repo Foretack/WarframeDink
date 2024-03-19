@@ -1,19 +1,20 @@
 const std = @import("std");
+const mem = std.mem;
 const log_types = @import("../log_types.zig");
 const game_types = @import("../game_types.zig");
 const mission = @import("../current_mission.zig");
 
 pub fn loginUsername(log: log_types.LogEntry) ?[]const u8 {
-    if (!std.mem.startsWith(u8, log.message, ": Logged in")) {
+    if (!mem.startsWith(u8, log.message, ": Logged in")) {
         return null;
     }
 
-    const next_space = std.mem.indexOf(u8, log.message[12..], " ").? + 12;
+    const next_space = mem.indexOf(u8, log.message[12..], " ").? + 12;
     return log.message[12..next_space];
 }
 
 pub fn missionEnd(log: log_types.LogEntry) bool {
-    if (std.mem.startsWith(u8, log.message, ": EOM missionLocationUnlocked=")) {
+    if (mem.startsWith(u8, log.message, ": EOM missionLocationUnlocked=")) {
         return true;
     }
 
@@ -21,36 +22,36 @@ pub fn missionEnd(log: log_types.LogEntry) bool {
 }
 
 pub fn exitingGame(log: log_types.LogEntry) bool {
-    return std.mem.eql(u8, log.message, ": Main Shutdown Initiated.");
+    return mem.eql(u8, log.message, ": Main Shutdown Initiated.");
 }
 
 // TODO: Make this trigger for more rare items
 pub fn rivenSliverPickup(log: log_types.LogEntry) bool {
-    if (!std.mem.startsWith(u8, log.message, ": Resource load completed")) {
+    if (!mem.startsWith(u8, log.message, ": Resource load completed")) {
         return false;
     }
 
-    return std.mem.indexOf(u8, log.message, "RivenFragment.png") != null;
+    return mem.indexOf(u8, log.message, "RivenFragment.png") != null;
 }
 
 pub fn nightwaveChallengeComplete(log: log_types.LogEntry) ?game_types.NightwaveChallenge {
-    if (!std.mem.startsWith(u8, log.message, ": LotusProfileData::NotifyWorldStateChallengeCompleted")) {
+    if (!mem.startsWith(u8, log.message, ": LotusProfileData::NotifyWorldStateChallengeCompleted")) {
         return null;
     }
 
     var tier: game_types.ChallengeTier = undefined;
-    if (std.mem.indexOf(u8, log.message, "/WeeklyHard/") != null) {
+    if (mem.indexOf(u8, log.message, "/WeeklyHard/") != null) {
         tier = .EliteWeekly;
-    } else if (std.mem.indexOf(u8, log.message, "/Weekly/") != null) {
+    } else if (mem.indexOf(u8, log.message, "/Weekly/") != null) {
         tier = .Weekly;
     } else {
         tier = .Daily;
     }
 
-    const last_slash_idx = std.mem.lastIndexOf(u8, log.message, "/") orelse return null;
+    const last_slash_idx = mem.lastIndexOf(u8, log.message, "/") orelse return null;
     var challenge_name: []const u8 = undefined;
     @setEvalBranchQuota(3000);
-    const first_num = std.mem.indexOfAny(u8, log.message, "1234567890");
+    const first_num = mem.indexOfAny(u8, log.message, "1234567890");
     const end_at_idx = if (first_num != null) first_num.? else log.message.len;
     const challenge = std.meta.stringToEnum(game_types.NightwaveChallenges, log.message[last_slash_idx + 1 .. end_at_idx]) orelse .UNKNOWN;
     challenge_name = switch (challenge) {

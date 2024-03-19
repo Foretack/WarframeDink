@@ -11,12 +11,14 @@ pub const Mission = struct {
     pub var maxLevel: usize = 0;
     pub var startedAt: i64 = 0;
     pub var successCount: u16 = 0;
+    pub var aborted: bool = false;
 
     pub var eidolonsCaputred: u5 = 0;
     pub var onslaughtWaves: u16 = 0;
     pub var circuitStages: u16 = 0;
 
     pub fn resetVars() void {
+        aborted = false;
         eidolonsCaputred = 0;
         onslaughtWaves = 0;
         circuitStages = 0;

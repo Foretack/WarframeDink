@@ -1,6 +1,7 @@
 const std = @import("std");
 const cfg = @import("config.zig");
 const sys = @import("parsing/sys.zig");
+const net = @import("parsing/net.zig");
 const game = @import("parsing/game.zig");
 const script = @import("parsing/script.zig");
 const discord = @import("utils/discord.zig");
@@ -262,6 +263,12 @@ fn lineAction(line: []const u8) !void {
                 color = .brown;
             }
         },
+        .Net => {
+            if (net.missionAbort(log)) {
+                std.log.info("mission aborted", .{});
+                CurrentMission.aborted = true;
+            }
+        },
         else => return,
     }
 
@@ -331,7 +338,11 @@ pub fn secSinceStart() i64 {
 }
 
 fn missionEnd() !void {
-    if (!dbg and std.time.timestamp() - CurrentMission.startedAt < 30) {
+    if (CurrentMission.aborted) {
+        return;
+    }
+
+    if (!dbg and std.time.timestamp() - CurrentMission.startedAt < 10) {
         return;
     }
 
