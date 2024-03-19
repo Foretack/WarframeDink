@@ -176,5 +176,5 @@ pub fn duviriStageFinished(log: log_types.LogEntry) bool {
         return false;
     }
 
-    return mem.eql(u8, log.message, ": endless stage num");
+    return mem.startsWith(u8, log.message, ": endless stage num");
 }
